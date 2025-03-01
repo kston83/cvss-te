@@ -1,5 +1,7 @@
 # CVSS-VT: Vulnerability Threat Scoring System
 
+Thank you to the original author of the tool [cvss-bt](https://github.com/t0sche/cvss-bt) 
+
 ## Overview
 
 The Common Vulnerability Scoring System (CVSS) is an industry standard for assessing the severity of security vulnerabilities. While the National Vulnerability Database (NVD) provides CVSS Base scores, these alone are insufficient for effective vulnerability prioritization. 
