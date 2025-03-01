@@ -8,8 +8,12 @@ The Common Vulnerability Scoring System (CVSS) is an industry standard for asses
 
 This repository enhances vulnerability scoring through two complementary approaches:
 
-1. **CVSS-BT (Base + Temporal)**: Enriches standard CVSS scores by incorporating the Exploit Code Maturity/Exploitability (E) Temporal Metric.
-2. **CVSS-VT (Vulnerability Threat)**: An advanced scoring system that builds on CVSS-BT by incorporating exploit quality metrics and threat intelligence context.
+1. **CVSS-BT (Base + Temporal)**: Enriches standard CVSS scores by incorporating the Exploit Code Maturity/Exploitability (E) Temporal Metric using the official CVSS specification.
+2. **CVSS-VT (Vulnerability Threat)**: An advanced scoring system that extends beyond CVSS-BT by incorporating detailed exploit quality metrics and additional threat intelligence context.
+
+While both scoring systems utilize the same data sources, they serve different purposes:
+- **CVSS-BT** adheres to the official CVSS standards and is directly compatible with existing vulnerability management tools
+- **CVSS-VT** provides a more nuanced, actionable score that better reflects real-world threat levels beyond what standard CVSS temporal metrics can express
 
 ## Data Sources
 
@@ -82,9 +86,14 @@ CVSS-VT = min(10, CVSS-BT_Score * Quality_Multiplier + Threat_Intel_Factor)
 Where:
 
 **Quality Multiplier**: Ranges from 0.8-1.2 based on exploit quality
-- For poor quality exploits: closer to 0.8
-- For high quality exploits: up to 1.2
+- For poor quality exploits: closer to 0.8 (reducing the base severity)
+- For high quality exploits: up to 1.2 (increasing the base severity)
 - Formula: 0.8 + (quality_score * 0.4)
+- If no exploits exist: defaults to 1.0 (neutral impact)
+
+This means a vulnerability with a high CVSS-BT score but only low-quality exploits could see its severity downgraded by up to 20%. For example, a vulnerability with CVSS-BT of 8.0 but poor-quality exploits (quality score of 0.2) would have:
+- Quality Multiplier: 0.8 + (0.2 * 0.4) = 0.88
+- Adjusted score before threat intel: 8.0 * 0.88 = 7.04
 
 **Threat Intel Factor**: Adds 0-2 points based on additional threat intelligence
 - CISA KEV or VulnCheck KEV presence: +1.0
@@ -92,6 +101,7 @@ Where:
 - Moderate EPSS score (≥ 0.36): +0.25
 - Multiple exploit sources (≥ 3): +0.5
 - Two exploit sources: +0.25
+- No threat intelligence signals: +0.0 (no automatic increase)
 
 ### CVSS-VT Severity Levels
 
@@ -103,7 +113,56 @@ Where:
 | 0.1 - 3.9 | LOW |
 | 0.0 | NONE |
 
+## Relationship Between CVSS-BT and CVSS-VT
+
+While both scoring systems utilize the same data sources (Metasploit, Nuclei, etc.), they analyze this information differently:
+
+### CVSS-BT Approach
+CVSS-BT follows the official CVSS methodology for temporal scoring:
+- Uses the presence of exploits in sources like Metasploit or Nuclei to assign a single Exploit Code Maturity value (E:H, E:F, E:P, etc.)
+- Applies a standardized CVSS calculation to modify the base score
+- Uses a binary assessment (exploit exists/doesn't exist) without considering exploit quality
+- Results in a score that strictly follows the CVSS standard
+
+### CVSS-VT Approach
+CVSS-VT provides a more nuanced analysis of the same data:
+- Starts with the CVSS-BT score as its foundation
+- Evaluates the *quality* of exploits across multiple dimensions (reliability, ease of use, effectiveness)
+- Considers the *quantity* of exploit sources as an additional factor
+- Assigns different weights to different intelligence sources
+- Incorporates prediction data (EPSS) in a more granular way
+- Can both increase AND decrease scores based on real-world threat context
+
+This dual approach gives security teams flexibility:
+- CVSS-BT scores for compliance and compatibility with standard tools
+- CVSS-VT scores for more actionable prioritization decisions
+
+While there is some overlap in the data used, the analytical approaches and outcomes serve different purposes.
+
+## Default Behavior When No Threat Intelligence Exists
+
+When a vulnerability has no data from any external threat intelligence sources:
+
+**For CVSS-BT**:
+- The Exploit Code Maturity value defaults to "Unproven" (E:U)
+- This typically results in a temporal score that is lower than the base score
+- For CVSS 3.0/3.1, an E:U value applies a multiplier of 0.91 to the base score
+- For CVSS 4.0, an E:U value applies a similar reduction
+
+**For CVSS-VT**:
+- The Quality Multiplier defaults to 1.0 (neutral, as there are no exploits to evaluate)
+- The Threat Intel Factor is 0.0 (no intelligence signals to consider)
+- The resulting CVSS-VT score equals the CVSS-BT score: `CVSS-VT = CVSS-BT * 1.0 + 0.0 = CVSS-BT`
+
+This approach ensures that vulnerabilities with no known exploits or threat intelligence are appropriately downgraded from their base scores, reducing noise by highlighting vulnerabilities with actual exploitation evidence rather than theoretical concerns.
+
 ## Practical Application
+
+A key benefit of CVSS-VT is its ability to reduce noise in vulnerability management by providing more accurate threat context. The system doesn't simply escalate scores—it refines them based on real-world exploitation factors:
+
+1. **Reduces False Positives**: Vulnerabilities with high base scores but no exploits in the wild are appropriately downgraded
+2. **Highlights True Threats**: Vulnerabilities actively being exploited are properly prioritized even if their base scores appear moderate
+3. **Contextualizes Vulnerability Feeds**: Helps security teams filter through the overwhelming volume of CVEs to focus on what matters
 
 Security professionals can utilize CVSS-VT scores to:
 
@@ -112,14 +171,31 @@ Security professionals can utilize CVSS-VT scores to:
 3. **Communicate risk** to stakeholders with more nuanced threat information
 4. **Compare threat levels** across different types of vulnerabilities using a standardized approach
 
-### Example Interpretation
+## Example Interpretations
 
+### Example 1: Reducing Noise
+A vulnerability with:
+- CVSS Base Score: 9.1 (Critical)
+- CVSS-BT Score: 7.3 (High) - Reduced due to only proof-of-concept exploits
+- CVSS-VT Score: 6.8 (Medium) - Further reduced due to low-quality exploits and no threat intelligence signals
+
+This demonstrates how CVSS-VT helps reduce false positives by appropriately downgrading vulnerabilities that appear severe but lack real-world exploitation evidence.
+
+### Example 2: Highlighting True Threats
 A vulnerability with:
 - CVSS Base Score: 7.5 (High)
-- CVSS-BT Score: 6.5 (Adjusted based on exploit maturity)
-- CVSS-VT Score: 8.3 (High)
+- CVSS-BT Score: 6.5 (Medium) - Standard temporal adjustment
+- CVSS-VT Score: 8.3 (High) - Elevated due to high-quality exploits, inclusion in KEV catalogs, and high EPSS score
 
-This indicates that while the base severity is High, and temporal factors would typically reduce its practical severity, the additional threat intelligence suggests this is still a High-priority vulnerability due to factors like high-quality exploit availability, inclusion in KEV catalogs, or high EPSS prediction.
+This shows how CVSS-VT can identify truly concerning vulnerabilities that might be underrepresented by standard scoring approaches.
+
+### Example 3: Clarifying Risk Levels
+A vulnerability with:
+- CVSS Base Score: 5.5 (Medium)
+- CVSS-BT Score: 5.5 (Medium) - No change with standard temporal factors
+- CVSS-VT Score: 7.8 (High) - Significantly elevated due to active exploitation in the wild
+
+This highlights vulnerabilities that might be overlooked due to moderate base scores but represent significant real-world threats.
 
 ## Caveats and Considerations
 
