@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVSS-VT CVE Lookup</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-6 text-center">CVSS-VT CVE Lookup</h1>
+        
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <div class="mb-4">
+                <label for="cve-input" class="block text-gray-700 font-bold mb-2">
+                    Enter CVE(s) - Comma Separated
+                </label>
+                <input 
+                    type="text" 
+                    id="cve-input" 
+                    placeholder="CVE-2021-39226, CVE-2023-0669" 
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <p class="text-gray-500 text-sm mt-1">
+                    Separate multiple CVEs with commas
+                </p>
+            </div>
+            <button 
+                id="search-btn" 
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+                Search CVEs
+            </button>
+        </div>
+
+        <div id="loading" class="text-center hidden">
+            <p class="text-gray-600">Loading data...</p>
+        </div>
+
+        <div id="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative hidden" role="alert">
+            <span class="block sm:inline" id="error-message"></span>
+        </div>
+
+        <div id="results" class="hidden">
+            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                <table class="min-w-full" id="results-table">
+                    <thead class="bg-gray-200">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS Base</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS-VT Score</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body">
+                        <!-- Results will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cveInput = document.getElementById('cve-input');
+            const searchBtn = document.getElementById('search-btn');
+            const loadingIndicator = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            const resultsBody = document.getElementById('results-body');
+
+            let csvData = null;
+
+            // Fetch the CSV file
+            fetch('cvss-vt.csv')
+                .then(response => response.text())
+                .then(csvText => {
+                    csvData = Papa.parse(csvText, {
+                        header: true,
+                        dynamicTyping: true
+                    }).data;
+                })
+                .catch(error => {
+                    console.error('Error loading CSV:', error);
+                });
+
+            searchBtn.addEventListener('click', function() {
+                // Reset previous results and errors
+                errorDiv.classList.add('hidden');
+                resultsDiv.classList.add('hidden');
+                resultsBody.innerHTML = '';
+
+                // Get and process CVE input
+                const inputCVEs = cveInput.value.split(',')
+                    .map(cve => cve.trim().toUpperCase())
+                    .filter(cve => cve.startsWith('CVE-'));
+
+                if (inputCVEs.length === 0) {
+                    errorDiv.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 'Please enter valid CVE(s)';
+                    return;
+                }
+
+                // If CSV is not loaded
+                if (!csvData) {
+                    errorDiv.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 'CVE data not loaded. Please try again.';
+                    return;
+                }
+
+                // Find matching CVEs
+                const matchedCVEs = inputCVEs.map(cve => {
+                    const match = csvData.find(row => row.cve === cve);
+                    return match;
+                }).filter(match => match);
+
+                // Handle no matches
+                if (matchedCVEs.length === 0) {
+                    errorDiv.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 'No matching CVEs found';
+                    return;
+                }
+
+                // Populate results
+                matchedCVEs.forEach(cve => {
+                    // Compile threat indicators
+                    const threatIndicators = [
+                        cve.cisa_kev ? 'CISA KEV' : '',
+                        cve.vulncheck_kev ? 'VulnCheck KEV' : '',
+                        cve.exploitdb ? 'Exploit DB' : '',
+                        cve.metasploit ? 'Metasploit' : '',
+                        cve.nuclei ? 'Nuclei' : '',
+                        cve.poc_github ? 'GitHub PoC' : ''
+                    ].filter(indicator => indicator).join(', ');
+
+                    const row = `
+                        <tr class="border-b">
+                            <td class="px-4 py-3 whitespace-nowrap">${cve.cve}</td>
+                            <td class="px-4 py-3">
+                                ${cve.base_score} (${cve.base_severity})
+                            </td>
+                            <td class="px-4 py-3">
+                                ${cve['cvss-vt_score']} (${cve['cvss-vt_severity']})
+                            </td>
+                            <td class="px-4 py-3">
+                                ${threatIndicators || 'No Active Indicators'}
+                            </td>
+                            <td class="px-4 py-3">${cve.published_date}</td>
+                        </tr>
+                    `;
+                    resultsBody.insertAdjacentHTML('beforeend', row);
+                });
+
+                resultsDiv.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
