@@ -6,10 +6,56 @@
     <title>CVSS-VT CVE Lookup</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #09f;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Tooltip styles */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-6 text-center">CVSS-VT CVE Lookup</h1>
+        <h1 class="text-3xl font-bold mb-2 text-center">CVSS-VT CVE Lookup</h1>
+        <p class="text-center text-gray-600 mb-6">View vulnerability information with CVSS and threat indicator details</p>
         
         <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <div class="mb-4">
@@ -19,22 +65,78 @@
                 <input 
                     type="text" 
                     id="cve-input" 
-                    placeholder="CVE-2021-39226, CVE-2023-0669" 
+                    placeholder="CVE-2021-44228, CVE-2023-23397" 
                     class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                 <p class="text-gray-500 text-sm mt-1">
                     Separate multiple CVEs with commas
                 </p>
             </div>
-            <button 
-                id="search-btn" 
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-                Search CVEs
-            </button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="severity-filter" class="block text-gray-700 text-sm mb-1">Severity Filter</label>
+                    <select id="severity-filter" class="px-3 py-2 border rounded-lg w-full">
+                        <option value="">All Severities</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="sort-by" class="block text-gray-700 text-sm mb-1">Sort Results</label>
+                    <select id="sort-by" class="px-3 py-2 border rounded-lg w-full">
+                        <option value="published_date_desc">Most Recent First</option>
+                        <option value="published_date_asc">Oldest First</option>
+                        <option value="base_score_desc">Highest Base Score</option>
+                        <option value="base_score_asc">Lowest Base Score</option>
+                        <option value="cvss_vt_score_desc">Highest CVSS-VT Score</option>
+                        <option value="cvss_vt_score_asc">Lowest CVSS-VT Score</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button 
+                    id="search-btn" 
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Search CVEs
+                </button>
+                <button 
+                    id="export-btn" 
+                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                    Export Results
+                </button>
+            </div>
+        </div>
+
+        <div id="stats-bar" class="bg-white shadow-md rounded-lg p-4 mb-6 hidden">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                    <p class="text-sm text-gray-500">Total Results</p>
+                    <p id="total-results" class="text-xl font-bold">0</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Critical</p>
+                    <p id="critical-count" class="text-xl font-bold text-red-600">0</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">High</p>
+                    <p id="high-count" class="text-xl font-bold text-orange-600">0</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">With Exploits</p>
+                    <p id="exploit-count" class="text-xl font-bold text-purple-600">0</p>
+                </div>
+            </div>
         </div>
 
         <div id="loading" class="text-center hidden">
+            <div class="spinner"></div>
             <p class="text-gray-600">Loading data...</p>
         </div>
 
@@ -42,60 +144,367 @@
             <span class="block sm:inline" id="error-message"></span>
         </div>
 
-        <div id="results" class="hidden">
+        <div id="results-container" class="hidden">
+            <h2 class="text-xl font-bold mb-3">Search Results</h2>
             <div class="bg-white shadow-md rounded-lg overflow-hidden">
-                <table class="min-w-full" id="results-table">
-                    <thead class="bg-gray-200">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS Base</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVSS-VT Score</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-body">
-                        <!-- Results will be populated here -->
-                    </tbody>
-                </table>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full" id="results-table">
+                        <thead class="bg-gray-200">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <span class="tooltip">
+                                        CVSS Base
+                                        <span class="tooltiptext">Standard CVSS Base Score</span>
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <span class="tooltip">
+                                        CVSS-VT Score
+                                        <span class="tooltiptext">Vulnerability Threat Score including exploit availability</span>
+                                    </span>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                            <!-- Results will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="mt-4 text-right">
+                <span id="results-count" class="text-sm text-gray-600">Showing 0 results</span>
+            </div>
+        </div>
+        
+        <!-- Modal for CVE details -->
+        <div id="cve-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+            <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto m-4">
+                <div class="p-4 border-b flex justify-between items-center">
+                    <h3 class="text-lg font-bold" id="modal-title">CVE Details</h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4" id="modal-content">
+                    <!-- Modal content will be populated here -->
+                </div>
+                <div class="p-4 border-t flex justify-end">
+                    <button id="close-modal-btn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        Close
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
+    <footer class="bg-gray-800 text-white py-4 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>CVSS-VT CVE Lookup Tool</p>
+        </div>
+    </footer>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Elements
             const cveInput = document.getElementById('cve-input');
             const searchBtn = document.getElementById('search-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const severityFilter = document.getElementById('severity-filter');
+            const sortBy = document.getElementById('sort-by');
             const loadingIndicator = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
-            const resultsDiv = document.getElementById('results');
+            const resultsContainer = document.getElementById('results-container');
             const resultsBody = document.getElementById('results-body');
+            const resultsCount = document.getElementById('results-count');
+            const statsBar = document.getElementById('stats-bar');
+            const totalResults = document.getElementById('total-results');
+            const criticalCount = document.getElementById('critical-count');
+            const highCount = document.getElementById('high-count');
+            const exploitCount = document.getElementById('exploit-count');
+            const modal = document.getElementById('cve-detail-modal');
+            const closeModal = document.getElementById('close-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
 
             let csvData = null;
+            let currentResults = [];
 
-            // Fetch the CSV file
+            // Helper Functions
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+
+            function getSeverityColor(score) {
+                if (!score) return 'bg-gray-400 text-white';
+                const numScore = parseFloat(score);
+                if (numScore >= 9.0) return 'bg-red-600 text-white';
+                if (numScore >= 7.0) return 'bg-orange-600 text-white';
+                if (numScore >= 4.0) return 'bg-yellow-500 text-black';
+                return 'bg-green-500 text-white';
+            }
+
+            function hasExploits(cve) {
+                return (cve.exploitdb === true || cve.metasploit === true || 
+                       cve.nuclei === true || cve.poc_github === true);
+            }
+
+            function createThreatIndicatorBadges(cve) {
+                const indicators = [
+                    { key: 'cisa_kev', label: 'CISA KEV', color: 'bg-red-500' },
+                    { key: 'vulncheck_kev', label: 'VulnCheck KEV', color: 'bg-orange-500' },
+                    { key: 'exploitdb', label: 'Exploit DB', color: 'bg-yellow-500' },
+                    { key: 'metasploit', label: 'Metasploit', color: 'bg-green-500' },
+                    { key: 'nuclei', label: 'Nuclei', color: 'bg-blue-500' },
+                    { key: 'poc_github', label: 'GitHub PoC', color: 'bg-purple-500' }
+                ];
+
+                const badges = indicators
+                    .filter(indicator => cve[indicator.key] === true)
+                    .map(indicator => 
+                        `<span class="inline-block ${indicator.color} text-white text-xs px-2 py-1 rounded mr-1 mb-1">
+                            ${indicator.label}
+                        </span>`
+                    )
+                    .join('');
+                
+                return badges || '<span class="text-gray-500">No Active Indicators</span>';
+            }
+
+            function showCVEDetails(cve) {
+                modalTitle.textContent = `${cve.cve} Details`;
+                
+                let cveDescription = cve.description || "No description available";
+                
+                const content = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <h4 class="font-bold mb-2">Vulnerability Details</h4>
+                            <p class="mb-2"><span class="font-medium">Published:</span> ${formatDate(cve.published_date)}</p>
+                            <p class="mb-2"><span class="font-medium">Last Modified:</span> ${formatDate(cve.last_modified_date)}</p>
+                            <p class="mb-4"><span class="font-medium">Description:</span></p>
+                            <p class="bg-gray-100 p-3 rounded text-sm">${cveDescription}</p>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-2">Scoring</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="font-medium">CVSS Base</p>
+                                    <span class="inline-block ${getSeverityColor(cve.base_score)} px-2 py-1 rounded mt-1">
+                                        ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
+                                    </span>
+                                </div>
+                                <div>
+                                    <p class="font-medium">CVSS-VT Score</p>
+                                    <span class="inline-block ${getSeverityColor(cve['cvss-vt_score'])} px-2 py-1 rounded mt-1">
+                                        ${cve['cvss-vt_score'] || 'N/A'} (${cve['cvss-vt_severity'] || 'N/A'})
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <h4 class="font-bold mt-4 mb-2">Vector</h4>
+                            <p class="bg-gray-100 p-2 rounded text-sm font-mono">${cve.vector_string || "N/A"}</p>
+                            
+                            <h4 class="font-bold mt-4 mb-2">Threat Indicators</h4>
+                            <div>${createThreatIndicatorBadges(cve)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4 class="font-bold mb-2">References</h4>
+                        <div class="bg-gray-100 p-3 rounded">
+                            <a href="https://nvd.nist.gov/vuln/detail/${cve.cve}" target="_blank" class="text-blue-600 hover:underline block mb-2">
+                                NIST NVD Database: ${cve.cve}
+                            </a>
+                            <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cve.cve}" target="_blank" class="text-blue-600 hover:underline block">
+                                Mitre CVE: ${cve.cve}
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+                modalContent.innerHTML = content;
+                modal.classList.remove('hidden');
+                
+                // Prevent background scrolling
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeDetailModal() {
+                modal.classList.add('hidden');
+                // Restore background scrolling
+                document.body.style.overflow = '';
+            }
+
+            function displayCVEResults(results) {
+                resultsBody.innerHTML = '';
+                currentResults = results;
+                
+                // Update results count
+                resultsCount.textContent = `Showing ${results.length} result${results.length !== 1 ? 's' : ''}`;
+                
+                // Update stats
+                totalResults.textContent = results.length;
+                criticalCount.textContent = results.filter(cve => cve['cvss-vt_severity'] === 'CRITICAL').length;
+                highCount.textContent = results.filter(cve => cve['cvss-vt_severity'] === 'HIGH').length;
+                exploitCount.textContent = results.filter(cve => hasExploits(cve)).length;
+                
+                // Show the stats bar
+                statsBar.classList.remove('hidden');
+
+                results.forEach(cve => {
+                    const threatIndicatorBadges = createThreatIndicatorBadges(cve);
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b hover:bg-gray-50';
+                    
+                    row.innerHTML = `
+                        <td class="px-4 py-3 whitespace-nowrap">${cve.cve}</td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded ${getSeverityColor(cve.base_score)}">
+                                ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded ${getSeverityColor(cve['cvss-vt_score'])}">
+                                ${cve['cvss-vt_score'] || 'N/A'} (${cve['cvss-vt_severity'] || 'N/A'})
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            ${threatIndicatorBadges}
+                        </td>
+                        <td class="px-4 py-3">${formatDate(cve.published_date)}</td>
+                        <td class="px-4 py-3 text-center">
+                            <button class="view-details bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded">
+                                View
+                            </button>
+                        </td>
+                    `;
+                    
+                    const viewButton = row.querySelector('.view-details');
+                    viewButton.addEventListener('click', () => showCVEDetails(cve));
+                    
+                    resultsBody.appendChild(row);
+                });
+
+                resultsContainer.classList.remove('hidden');
+            }
+
+            function filterAndSortResults(results) {
+                const severityFilterValue = severityFilter.value;
+                const sortByValue = sortBy.value;
+
+                let filteredResults = [...results];
+
+                // Apply severity filter
+                if (severityFilterValue) {
+                    filteredResults = filteredResults.filter(cve => 
+                        cve['cvss-vt_severity'] === severityFilterValue
+                    );
+                }
+
+                // Apply sorting
+                switch(sortByValue) {
+                    case 'published_date_desc':
+                        filteredResults.sort((a, b) => new Date(b.published_date || 0) - new Date(a.published_date || 0));
+                        break;
+                    case 'published_date_asc':
+                        filteredResults.sort((a, b) => new Date(a.published_date || 0) - new Date(b.published_date || 0));
+                        break;
+                    case 'base_score_desc':
+                        filteredResults.sort((a, b) => (parseFloat(b.base_score) || 0) - (parseFloat(a.base_score) || 0));
+                        break;
+                    case 'base_score_asc':
+                        filteredResults.sort((a, b) => (parseFloat(a.base_score) || 0) - (parseFloat(b.base_score) || 0));
+                        break;
+                    case 'cvss_vt_score_desc':
+                        filteredResults.sort((a, b) => (parseFloat(b['cvss-vt_score']) || 0) - (parseFloat(a['cvss-vt_score']) || 0));
+                        break;
+                    case 'cvss_vt_score_asc':
+                        filteredResults.sort((a, b) => (parseFloat(a['cvss-vt_score']) || 0) - (parseFloat(b['cvss-vt_score']) || 0));
+                        break;
+                }
+
+                return filteredResults;
+            }
+
+            // Load data immediately
+            loadingIndicator.classList.remove('hidden');
+            
+            // Fetch the CSV file (from the root directory for GitHub Pages)
             fetch('cvss-vt.csv')
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.text();
+                })
                 .then(csvText => {
-                    csvData = Papa.parse(csvText, {
+                    // Parse CSV
+                    const parseResult = Papa.parse(csvText, {
                         header: true,
-                        dynamicTyping: true
-                    }).data;
+                        dynamicTyping: true,
+                        skipEmptyLines: true
+                    });
+                    
+                    if (parseResult.errors && parseResult.errors.length > 0) {
+                        console.warn('CSV parsing warnings:', parseResult.errors);
+                    }
+                    
+                    csvData = parseResult.data;
+
+                    // Fix any potential data issues
+                    csvData = csvData.filter(row => row && row.cve && row.cve.startsWith('CVE-'));
+                    
+                    // Hide loading indicator
+                    loadingIndicator.classList.add('hidden');
+                    console.log(`Loaded ${csvData.length} CVE records successfully`);
                 })
                 .catch(error => {
                     console.error('Error loading CSV:', error);
+                    loadingIndicator.classList.add('hidden');
+                    errorDiv.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 'Error loading CVE data: ' + error.message;
                 });
 
+            // Event Listeners
+            // Search button event listener
             searchBtn.addEventListener('click', function() {
                 // Reset previous results and errors
                 errorDiv.classList.add('hidden');
-                resultsDiv.classList.add('hidden');
-                resultsBody.innerHTML = '';
-
+                resultsContainer.classList.add('hidden');
+                
                 // Get and process CVE input
-                const inputCVEs = cveInput.value.split(',')
-                    .map(cve => cve.trim().toUpperCase())
-                    .filter(cve => cve.startsWith('CVE-'));
+                const inputText = cveInput.value.trim();
+                
+                if (!inputText) {
+                    errorDiv.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = 'Please enter valid CVE(s)';
+                    return;
+                }
+                
+                const inputCVEs = inputText.split(',')
+                    .map(cve => {
+                        cve = cve.trim().toUpperCase();
+                        // Add CVE- prefix if missing
+                        if (cve.match(/^\d{4}-\d+$/)) {
+                            return 'CVE-' + cve;
+                        }
+                        return cve;
+                    })
+                    .filter(cve => cve.match(/^CVE-\d{4}-\d+$/));
 
                 if (inputCVEs.length === 0) {
                     errorDiv.classList.remove('hidden');
@@ -104,17 +513,21 @@
                 }
 
                 // If CSV is not loaded
-                if (!csvData) {
+                if (!csvData || csvData.length === 0) {
                     errorDiv.classList.remove('hidden');
-                    document.getElementById('error-message').textContent = 'CVE data not loaded. Please try again.';
+                    document.getElementById('error-message').textContent = 'CVE data not loaded. Please reload the page and try again.';
                     return;
                 }
 
                 // Find matching CVEs
-                const matchedCVEs = inputCVEs.map(cve => {
-                    const match = csvData.find(row => row.cve === cve);
-                    return match;
-                }).filter(match => match);
+                const matchedCVEs = [];
+                
+                inputCVEs.forEach(cve => {
+                    const match = csvData.find(row => row && row.cve === cve);
+                    if (match) {
+                        matchedCVEs.push(match);
+                    }
+                });
 
                 // Handle no matches
                 if (matchedCVEs.length === 0) {
@@ -123,37 +536,87 @@
                     return;
                 }
 
-                // Populate results
-                matchedCVEs.forEach(cve => {
-                    // Compile threat indicators
-                    const threatIndicators = [
-                        cve.cisa_kev ? 'CISA KEV' : '',
-                        cve.vulncheck_kev ? 'VulnCheck KEV' : '',
-                        cve.exploitdb ? 'Exploit DB' : '',
-                        cve.metasploit ? 'Metasploit' : '',
-                        cve.nuclei ? 'Nuclei' : '',
-                        cve.poc_github ? 'GitHub PoC' : ''
-                    ].filter(indicator => indicator).join(', ');
+                // Apply current filters and sorting
+                const filteredAndSorted = filterAndSortResults(matchedCVEs);
+                
+                // Display matched CVEs
+                displayCVEResults(filteredAndSorted);
+            });
 
-                    const row = `
-                        <tr class="border-b">
-                            <td class="px-4 py-3 whitespace-nowrap">${cve.cve}</td>
-                            <td class="px-4 py-3">
-                                ${cve.base_score} (${cve.base_severity})
-                            </td>
-                            <td class="px-4 py-3">
-                                ${cve['cvss-vt_score']} (${cve['cvss-vt_severity']})
-                            </td>
-                            <td class="px-4 py-3">
-                                ${threatIndicators || 'No Active Indicators'}
-                            </td>
-                            <td class="px-4 py-3">${cve.published_date}</td>
-                        </tr>
-                    `;
-                    resultsBody.insertAdjacentHTML('beforeend', row);
-                });
+            // Export button event listener
+            exportBtn.addEventListener('click', function() {
+                if (currentResults.length === 0) {
+                    alert('No results to export');
+                    return;
+                }
 
-                resultsDiv.classList.remove('hidden');
+                // Create CSV content
+                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-VT Score', 'CVSS-VT Severity', 'Published Date', 'Description'];
+                const csvContent = [
+                    headers.join(','),
+                    ...currentResults.map(cve => 
+                        [
+                            cve.cve, 
+                            cve.base_score, 
+                            cve.base_severity, 
+                            cve['cvss-vt_score'], 
+                            cve['cvss-vt_severity'], 
+                            cve.published_date,
+                            `"${(cve.description || '').replace(/"/g, '""')}"`
+                        ].join(',')
+                    )
+                ].join('\n');
+
+                // Create and trigger download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'cvss-vt-results.csv');
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Filter and sort event listeners
+            severityFilter.addEventListener('change', function() {
+                if (currentResults.length > 0) {
+                    const filtered = filterAndSortResults(currentResults);
+                    displayCVEResults(filtered);
+                }
+            });
+
+            sortBy.addEventListener('change', function() {
+                if (currentResults.length > 0) {
+                    const filtered = filterAndSortResults(currentResults);
+                    displayCVEResults(filtered);
+                }
+            });
+
+            // Modal close button events
+            closeModal.addEventListener('click', closeDetailModal);
+            closeModalBtn.addEventListener('click', closeDetailModal);
+            
+            // Close modal when clicking outside content
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    closeDetailModal();
+                }
+            });
+            
+            // Close modal on escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                    closeDetailModal();
+                }
+            });
+
+            // Keyboard shortcut for search (Enter in the search box)
+            cveInput.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    searchBtn.click();
+                }
             });
         });
     </script>
