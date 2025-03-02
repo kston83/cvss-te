@@ -6,7 +6,6 @@ import cvss
 import logging
 from packaging import version
 
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -132,7 +131,7 @@ def enrich(df, epss_df):
                 reliability = ms_json_data[item].get('reliability', 'Unknown')
                 rank = ms_json_data[item].get('rank', 'Normal')
                 
-                # Map ratings to numerical scores (to be implemented)
+                # Map ratings to numerical scores
                 reliability_score = map_reliability_to_score(reliability)
                 rank_score = map_rank_to_score(rank)
                 
@@ -374,7 +373,7 @@ def normalize_version(ver):
     
     try:
         # Convert to string and handle different formats
-        ver_str = str(ver)
+        ver_str = str(ver).strip()
         
         # Check for CVSS 4.0
         if '4' in ver_str:
@@ -478,23 +477,7 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
     # Default values by CVSS version
     if cvss_version == '4.0':
         # CVSS 4.0 temporal metrics
-        default_temporal = {
-            'E': e_value,         # Exploit Maturity (from our analysis)
-            'X': 'C',             # Exploit Confidence (Confirmed)
-            'RE': 'O'             # Report Confidence (Official)
-        }
-        
-        # Extract the base part (everything before temporal metrics if they exist)
-        if '/T:' in base_vector:
-            base_parts = base_vector.split('/T:')[0]
-            # Add the temporal metrics prefix with our metrics
-            temporal_part = '/T:'
-            for key, value in default_temporal.items():
-                temporal_part += f"/{key}:{value}"
-            return base_parts + temporal_part
-        else:
-            # No temporal part yet, add a complete one
-            return base_vector + '/T:' + '/'.join(f"{k}:{v}" for k, v in default_temporal.items())
+        return update_vector_with_maturity(base_vector, exploit_maturity)
         
     elif cvss_version in ['3.0', '3.1']:
         # CVSS 3.0/3.1 temporal metrics
@@ -534,32 +517,6 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
     
     # For unrecognized versions, just add exploit maturity
     return update_vector_with_maturity(base_vector, exploit_maturity)
-
-
-def generate_exploit_quality_explanation(row):
-    """
-    Generate a human-readable explanation of exploit quality.
-    """
-    if row.get('exploit_sources', 0) == 0:
-        return "No known exploits available."
-        
-    quality_level = "Unknown"
-    quality_score = row.get('quality_score', 0)
-    
-    if quality_score >= 0.8:
-        quality_level = "High"
-    elif quality_score >= 0.5:
-        quality_level = "Medium"
-    else:
-        quality_level = "Low"
-        
-    explanation = f"Exploit Quality: {quality_level} ({quality_score*100:.1f}%)\n"
-    explanation += f"- Reliability: {row.get('reliability', 0)*100:.1f}%\n"
-    explanation += f"- Ease of Use: {row.get('ease_of_use', 0)*100:.1f}%\n"
-    explanation += f"- Effectiveness: {row.get('effectiveness', 0)*100:.1f}%\n"
-    explanation += f"- Sources: {row.get('exploit_sources', 0)} exploit(s) available"
-    
-    return explanation
 
 
 def compute_cvss(row):
@@ -603,8 +560,6 @@ def calculate_cvss_te_score(row):
     1. Standard CVSS Base+Temporal score
     2. Exploit quality metrics
     3. Threat intelligence context
-    
-    Returns both a score and an explanation of the calculation
     """
     # Start with the CVSS-BT score if available
     try:
@@ -613,7 +568,7 @@ def calculate_cvss_te_score(row):
         base_score = None
     
     if base_score is None:
-        return 'UNKNOWN', 'Unable to calculate CVSS-TE score: No valid CVSS-BT score'
+        return 'UNKNOWN'
     
     # Get quality metrics
     quality_score = row['quality_score']
@@ -652,16 +607,7 @@ def calculate_cvss_te_score(row):
     # Round to one decimal place
     te_score = round(te_score, 1)
     
-    # Generate explanation
-    explanation = (
-        f"CVSS-TE Score: {te_score:.1f}\n"
-        f"- Base CVSS-BT: {base_score:.1f}\n"
-        f"- Quality Multiplier: {quality_multiplier:.2f} (based on {quality_score:.2f} quality score)\n"
-        f"- Threat Intel Factor: +{threat_intel_factor:.1f}\n"
-        f"- Calculation: min(10, {base_score:.1f} × {quality_multiplier:.2f} + {threat_intel_factor:.1f})"
-    )
-    
-    return te_score, explanation
+    return te_score
 
 
 def get_te_severity(score):
@@ -729,18 +675,6 @@ def update_temporal_score(df, epss_threshold):
         ), 
         axis=1
     )
-    
-    # Generate human-readable quality explanations
-    df['exploit_quality_explanation'] = df.apply(
-        lambda row: generate_exploit_quality_explanation(
-            {'quality_score': row['quality_score'],
-             'exploit_sources': row['exploit_sources'],
-             'reliability': row['reliability'],
-             'ease_of_use': row['ease_of_use'],
-             'effectiveness': row['effectiveness']}
-        ), 
-        axis=1
-    )
 
     # Apply CVSS computation
     logger.info('Computing CVSS-BT scores and severities')
@@ -759,11 +693,9 @@ def update_temporal_score(df, epss_threshold):
     if errors > 0:
         logger.warning(f"Encountered {errors} errors when computing CVSS scores")
     
-    # Calculate enhanced CVSS-TE scores
-    logger.info('Computing enhanced CVSS-TE scores')
-    df[['cvss-te_score', 'cvss-te_explanation']] = df.apply(
-        calculate_cvss_te_score, axis=1, result_type='expand'
-    )
+    # Calculate CVSS-TE scores without explanations
+    logger.info('Computing CVSS-TE scores')
+    df['cvss-te_score'] = df.apply(calculate_cvss_te_score, axis=1)
     
     # Determine TE severity based on score
     df['cvss-te_severity'] = df['cvss-te_score'].apply(get_te_severity)

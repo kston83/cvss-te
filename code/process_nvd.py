@@ -9,6 +9,7 @@ import io
 import os
 import sys
 import time
+import re
 
 # Configure logging
 logging.basicConfig(
@@ -135,6 +136,72 @@ def download_epss_data(url, backup_path=None):
             logger.error("No backup EPSS data available")
             raise
 
+def validate_cvss_vector(vector_str, version):
+    """
+    Validates CVSS vector string according to the specified version.
+    
+    Args:
+        vector_str (str): CVSS vector string
+        version (str): CVSS version (2.0, 3.0, 3.1, 4.0)
+        
+    Returns:
+        bool: True if valid, False otherwise
+    """
+    if not vector_str or vector_str == 'N/A':
+        return False
+    
+    # Basic validation patterns for different CVSS versions
+    patterns = {
+        '2.0': r'^AV:[LAN]/AC:[HML]/Au:[MSN]/C:[NPC]/I:[NPC]/A:[NPC]',
+        '3.0': r'^CVSS:3\.0/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH]',
+        '3.1': r'^CVSS:3\.1/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH]',
+        '4.0': r'^CVSS:4\.0/AV:[NALP]/AC:[LH]/AT:[NP]/PR:[NLH]/UI:[NPA]/VC:[HLN]/VI:[HLN]/VA:[HLN]/SC:[HLN]/SI:[HLN]/SA:[HLN]'
+    }
+    
+    if version in patterns:
+        # Check if the vector string matches the basic pattern for the specified version
+        if re.match(patterns[version], vector_str):
+            return True
+        else:
+            logger.warning(f"CVSS vector string '{vector_str}' does not match pattern for version {version}")
+    else:
+        logger.warning(f"Unknown CVSS version: {version}")
+    
+    return False
+
+def normalize_cvss_version(version_str):
+    """
+    Normalize CVSS version string to standard format (2.0, 3.0, 3.1, 4.0)
+    
+    Args:
+        version_str (str): Version string to normalize
+        
+    Returns:
+        str: Normalized version string
+    """
+    if not version_str or version_str == 'N/A':
+        return 'N/A'
+    
+    version_str = str(version_str).strip()
+    
+    # CVSS 4.0
+    if version_str.startswith('4') or version_str == '4.0':
+        return '4.0'
+    
+    # CVSS 3.1
+    elif version_str == '3.1':
+        return '3.1'
+    
+    # CVSS 3.0
+    elif version_str == '3.0' or version_str == '3':
+        return '3.0'
+    
+    # CVSS 2.0
+    elif version_str.startswith('2') or version_str == '2.0':
+        return '2.0'
+    
+    return version_str
+
 def process_nvd_files():
     """
     Processes the NVD JSON files and returns a DataFrame containing the data.
@@ -159,31 +226,59 @@ def process_nvd_files():
 
                 for entry in vulnerabilities:
                     try:
+                        # Skip ** entries (reserved/rejected CVEs)
                         if entry['cve']['description']['description_data'][0]['value'].startswith('**'):
                             continue
                             
                         cve = entry['cve']['CVE_data_meta']['ID']
                         
+                        # Extract CVSS data based on version
                         if 'metricV40' in entry.get('impact', {}):
+                            # CVSS 4.0 handling
                             cvss_version = '4.0'
                             base_score = entry['impact']['metricV40']['baseScore']
                             base_severity = entry['impact']['metricV40']['baseSeverity']
                             base_vector = entry['impact']['metricV40']['vectorString']
+                            
+                            # Validate vector string format
+                            if not validate_cvss_vector(base_vector, cvss_version):
+                                logger.warning(f"Invalid CVSS 4.0 vector string for {cve}: {base_vector}")
+                                
                         elif 'baseMetricV3' in entry.get('impact', {}):
-                            cvss_version = entry['impact']['baseMetricV3']['cvssV3']['version']
+                            # CVSS 3.x handling - determine if 3.0 or 3.1
+                            cvss_version = normalize_cvss_version(entry['impact']['baseMetricV3']['cvssV3'].get('version', '3.0'))
                             base_score = entry['impact']['baseMetricV3']['cvssV3']['baseScore']
                             base_severity = entry['impact']['baseMetricV3']['cvssV3']['baseSeverity']
                             base_vector = entry['impact']['baseMetricV3']['cvssV3']['vectorString']
-                        else:
-                            cvss_version = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('version', 'N/A')
+                            
+                            # Validate vector string format
+                            if not validate_cvss_vector(base_vector, cvss_version):
+                                logger.warning(f"Invalid CVSS {cvss_version} vector string for {cve}: {base_vector}")
+                                
+                        elif 'baseMetricV2' in entry.get('impact', {}):
+                            # CVSS 2.0 handling
+                            cvss_version = '2.0'  # Always 2.0 for baseMetricV2
                             base_score = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('baseScore', 'N/A')
                             base_severity = entry.get('impact', {}).get('baseMetricV2', {}).get('severity', 'N/A')
                             base_vector = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('vectorString', 'N/A')
+                            
+                            # Validate vector string format
+                            if not validate_cvss_vector(base_vector, cvss_version):
+                                logger.warning(f"Invalid CVSS 2.0 vector string for {cve}: {base_vector}")
+                        else:
+                            # No CVSS data available
+                            cvss_version = 'N/A'
+                            base_score = 'N/A'
+                            base_severity = 'N/A'
+                            base_vector = 'N/A'
                         
+                        # Extract additional metadata
                         assigner = entry['cve']['CVE_data_meta']['ASSIGNER']
                         published_date = entry['publishedDate']
+                        last_modified_date = entry.get('lastModifiedDate', '')
                         description = entry['cve']['description']['description_data'][0]['value']
 
+                        # Create dictionary entry for this CVE
                         dict_entry = {
                             'cve': cve,
                             'cvss_version': cvss_version,
@@ -192,11 +287,12 @@ def process_nvd_files():
                             'base_vector': base_vector,
                             'assigner': assigner,
                             'published_date': published_date,
+                            'last_modified_date': last_modified_date,
                             'description': description
                         }
                         nvd_dict.append(dict_entry)
                     except Exception as e:
-                        logger.warning(f"Error processing entry in {file_path.name}: {e}")
+                        logger.warning(f"Error processing entry in {file_path.name} for CVE {entry.get('cve', {}).get('CVE_data_meta', {}).get('ID', 'Unknown')}: {e}")
                         continue
         except Exception as e:
             logger.error(f"Error processing file {file_path.name}: {e}")
@@ -207,7 +303,13 @@ def process_nvd_files():
         return pd.DataFrame()
         
     nvd_df = pd.DataFrame(nvd_dict)
-    logger.info(f'CVEs with CVSS scores from NVD: {nvd_df["cve"].nunique()}')
+    
+    # Log version distribution for insights
+    if not nvd_df.empty and 'cvss_version' in nvd_df.columns:
+        version_counts = nvd_df['cvss_version'].value_counts()
+        logger.info(f'CVSS version distribution: {version_counts.to_dict()}')
+    
+    logger.info(f'Total CVEs extracted from NVD: {nvd_df["cve"].nunique()}')
     return nvd_df
 
 def enrich_df(nvd_df):
@@ -254,6 +356,7 @@ def enrich_df(nvd_df):
         'base_vector',
         'assigner',
         'published_date',
+        'last_modified_date',
         'epss',
         'cisa_kev',
         'vulncheck_kev',
@@ -274,7 +377,6 @@ def enrich_df(nvd_df):
         # TE score (enhanced)
         'cvss-te_score',
         'cvss-te_severity',
-        'cvss-te_vector',
         'cvss-te_explanation'
     ]
 
