@@ -31,7 +31,7 @@
         
         .tooltip .tooltiptext {
             visibility: hidden;
-            width: 200px;
+            width: 220px;
             background-color: #555;
             color: #fff;
             text-align: center;
@@ -41,7 +41,7 @@
             z-index: 1;
             bottom: 125%;
             left: 50%;
-            margin-left: -100px;
+            margin-left: -110px;
             opacity: 0;
             transition: opacity 0.3s;
         }
@@ -92,8 +92,9 @@
                         <option value="published_date_asc">Oldest First</option>
                         <option value="base_score_desc">Highest Base Score</option>
                         <option value="base_score_asc">Lowest Base Score</option>
-                        <option value="cvss_te_score_desc">Highest CVSS-TE Score</option>
-                        <option value="cvss_te_score_asc">Lowest CVSS-TE Score</option>
+                        <option value="cvss-te_score_desc">Highest CVSS-TE Score</option>
+                        <option value="cvss-te_score_asc">Lowest CVSS-TE Score</option>
+                        <option value="cvss-te_enhanced_score_desc">Highest CVSS-TE Enhanced Score</option>
                     </select>
                 </div>
             </div>
@@ -160,14 +161,14 @@
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <span class="tooltip">
-                                        CVSS-TE Score
-                                        <span class="tooltiptext">Threat-Enhanced Score including exploit availability</span>
+                                        CVSS-BT
+                                        <span class="tooltiptext">Standards-compliant CVSS Base+Temporal Score</span>
                                     </span>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <span class="tooltip">
-                                        CVSS-TE Vector
-                                        <span class="tooltiptext">CVSS Vector with temporal metrics</span>
+                                        CVSS-TE
+                                        <span class="tooltiptext">Threat-Enhanced Score with intelligence context</span>
                                     </span>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
@@ -306,7 +307,7 @@
                         </div>
                         <div>
                             <h4 class="font-bold mb-2">Scoring</h4>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-2 gap-4 mb-2">
                                 <div>
                                     <p class="font-medium">CVSS Base</p>
                                     <span class="inline-block ${getSeverityColor(cve.base_score)} px-2 py-1 rounded mt-1">
@@ -314,11 +315,17 @@
                                     </span>
                                 </div>
                                 <div>
-                                    <p class="font-medium">CVSS-TE Score</p>
+                                    <p class="font-medium">CVSS-BT (Temporal)</p>
                                     <span class="inline-block ${getSeverityColor(cve['cvss-te_score'])} px-2 py-1 rounded mt-1">
                                         ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                                     </span>
                                 </div>
+                            </div>
+                            <div class="mb-4">
+                                <p class="font-medium">CVSS-TE (Enhanced)</p>
+                                <span class="inline-block ${getSeverityColor(cve['cvss-te_enhanced_score'])} px-2 py-1 rounded mt-1">
+                                    ${cve['cvss-te_enhanced_score'] || 'N/A'} (${cve['cvss-te_enhanced_severity'] || 'N/A'})
+                                </span>
                             </div>
                             
                             <h4 class="font-bold mt-4 mb-2">CVSS Vector</h4>
@@ -329,6 +336,12 @@
                             
                             <h4 class="font-bold mt-4 mb-2">Threat Indicators</h4>
                             <div>${createThreatIndicatorBadges(cve)}</div>
+                            
+                            <h4 class="font-bold mt-4 mb-2">Exploit Quality</h4>
+                            <div class="bg-gray-100 p-2 rounded text-sm">
+                                <p>Quality Score: ${(cve.quality_score * 100).toFixed(1)}%</p>
+                                <p>Exploit Sources: ${cve.exploit_sources}</p>
+                            </div>
                         </div>
                     </div>
                     
@@ -367,8 +380,8 @@
                 
                 // Update stats
                 totalResults.textContent = results.length;
-                criticalCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'CRITICAL').length;
-                highCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'HIGH').length;
+                criticalCount.textContent = results.filter(cve => cve['cvss-te_enhanced_severity'] === 'CRITICAL').length;
+                highCount.textContent = results.filter(cve => cve['cvss-te_enhanced_severity'] === 'HIGH').length;
                 exploitCount.textContent = results.filter(cve => hasExploits(cve)).length;
                 
                 // Show the stats bar
@@ -392,8 +405,10 @@
                                 ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-xs font-mono">
-                            ${cve['cvss-te_vector'] || 'N/A'}
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded ${getSeverityColor(cve['cvss-te_enhanced_score'])}">
+                                ${cve['cvss-te_enhanced_score'] || 'N/A'} (${cve['cvss-te_enhanced_severity'] || 'N/A'})
+                            </span>
                         </td>
                         <td class="px-4 py-3">
                             ${threatIndicatorBadges}
@@ -424,7 +439,7 @@
                 // Apply severity filter
                 if (severityFilterValue) {
                     filteredResults = filteredResults.filter(cve => 
-                        cve['cvss-te_severity'] === severityFilterValue
+                        cve['cvss-te_enhanced_severity'] === severityFilterValue
                     );
                 }
 
@@ -442,11 +457,14 @@
                     case 'base_score_asc':
                         filteredResults.sort((a, b) => (parseFloat(a.base_score) || 0) - (parseFloat(b.base_score) || 0));
                         break;
-                    case 'cvss_te_score_desc':
+                    case 'cvss-te_score_desc':
                         filteredResults.sort((a, b) => (parseFloat(b['cvss-te_score']) || 0) - (parseFloat(a['cvss-te_score']) || 0));
                         break;
-                    case 'cvss_te_score_asc':
+                    case 'cvss-te_score_asc':
                         filteredResults.sort((a, b) => (parseFloat(a['cvss-te_score']) || 0) - (parseFloat(b['cvss-te_score']) || 0));
+                        break;
+                    case 'cvss-te_enhanced_score_desc':
+                        filteredResults.sort((a, b) => (parseFloat(b['cvss-te_enhanced_score']) || 0) - (parseFloat(a['cvss-te_enhanced_score']) || 0));
                         break;
                 }
 
@@ -564,16 +582,18 @@
                 }
 
                 // Create CSV content
-                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'CVSS-TE Vector', 'Published Date', 'Description'];
+                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-BT Score', 'CVSS-BT Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'CVSS-TE Vector', 'Published Date', 'Description'];
                 const csvContent = [
                     headers.join(','),
                     ...currentResults.map(cve => 
                         [
                             cve.cve, 
                             cve.base_score, 
-                            cve.base_severity, 
-                            cve['cvss-te_score'], 
+                            cve.base_severity,
+                            cve['cvss-te_score'],
                             cve['cvss-te_severity'],
+                            cve['cvss-te_enhanced_score'], 
+                            cve['cvss-te_enhanced_severity'],
                             `"${(cve['cvss-te_vector'] || '').replace(/"/g, '""')}"`,
                             cve.published_date,
                             `"${(cve.description || '').replace(/"/g, '""')}"`

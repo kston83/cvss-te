@@ -245,7 +245,7 @@ def enrich_df(nvd_df):
         logger.error(f"Error updating temporal scores: {e}")
         return enriched_df
 
-    # Define the essential columns and order them so that the TE outputs are together.
+    # Define the essential columns with both BT and TE data
     essential_columns = [
         'cve',
         'cvss_version',
@@ -266,11 +266,15 @@ def enrich_df(nvd_df):
         'effectiveness',
         'quality_score',
         'exploit_sources',
+        'exploit_maturity',
+        # BT score (standard temporal)
+        'cvss-bt_score',
+        'cvss-bt_severity',
+        'cvss-bt_vector',
+        # TE score (enhanced)
         'cvss-te_score',
         'cvss-te_severity',
         'cvss-te_vector',
-        'cvss-te_enhanced_score',
-        'cvss-te_enhanced_severity',
         'cvss-te_explanation'
     ]
 
@@ -292,6 +296,7 @@ def enrich_df(nvd_df):
 
     cvss_te_df = cvss_te_df.sort_values(by=['published_date']).reset_index(drop=True)
 
+    # Save both the combined data
     output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cvss-te.csv')
     logger.info(f'Saving enriched data to {output_file}')
     cvss_te_df.to_csv(output_file, index=False, mode='w')
