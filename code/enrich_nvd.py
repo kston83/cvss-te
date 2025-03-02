@@ -40,6 +40,89 @@ EPSS_THRESHOLD = 0.36
 At ~37%, the CVE is very likely to have weaponized exploit code
 """
 
+# CVSS standards definitions - derived from official documentation
+CVSS_VERSION_METRICS = {
+    '2.0': {
+        'exploit_maturity': {
+            'high': 'E:H',       # High
+            'poc': 'E:POC',      # Proof-of-Concept
+            'unproven': 'E:U',   # Unproven
+            'default': 'E:U'     # Default value
+        },
+        'remediation': {
+            'official': 'RL:OF',  # Official Fix
+            'workaround': 'RL:W', # Workaround
+            'unavailable': 'RL:U',# Unavailable 
+            'default': 'RL:OF'    # Default value
+        },
+        'confidence': {
+            'confirmed': 'RC:C',  # Confirmed
+            'uncorroborated': 'RC:UR', # Uncorroborated
+            'unconfirmed': 'RC:UC',    # Unconfirmed
+            'default': 'RC:C'     # Default value
+        }
+    },
+    '3.0': {
+        'exploit_maturity': {
+            'high': 'E:H',        # High
+            'functional': 'E:F',  # Functional
+            'poc': 'E:P',         # Proof-of-Concept
+            'unproven': 'E:U',    # Unproven
+            'notdefined': 'E:X',  # Not Defined
+            'default': 'E:U'      # Default value
+        },
+        'remediation': {
+            'official': 'RL:O',    # Official Fix
+            'temporary': 'RL:T',   # Temporary Fix
+            'workaround': 'RL:W',  # Workaround
+            'unavailable': 'RL:U', # Unavailable
+            'notdefined': 'RL:X',  # Not Defined
+            'default': 'RL:O'      # Default value
+        },
+        'confidence': {
+            'confirmed': 'RC:C',     # Confirmed
+            'reasonable': 'RC:R',    # Reasonable
+            'unknown': 'RC:U',       # Unknown
+            'notdefined': 'RC:X',    # Not Defined
+            'default': 'RC:C'        # Default value
+        }
+    },
+    '3.1': {
+        'exploit_maturity': {
+            'high': 'E:H',        # High
+            'functional': 'E:F',  # Functional
+            'poc': 'E:P',         # Proof-of-Concept
+            'unproven': 'E:U',    # Unproven
+            'notdefined': 'E:X',  # Not Defined
+            'default': 'E:U'      # Default value
+        },
+        'remediation': {
+            'official': 'RL:O',    # Official Fix
+            'temporary': 'RL:T',   # Temporary Fix
+            'workaround': 'RL:W',  # Workaround
+            'unavailable': 'RL:U', # Unavailable
+            'notdefined': 'RL:X',  # Not Defined
+            'default': 'RL:O'      # Default value
+        },
+        'confidence': {
+            'confirmed': 'RC:C',     # Confirmed
+            'reasonable': 'RC:R',    # Reasonable
+            'unknown': 'RC:U',       # Unknown
+            'notdefined': 'RC:X',    # Not Defined
+            'default': 'RC:C'        # Default value
+        }
+    },
+    '4.0': {
+        'exploit_maturity': {
+            'attacked': 'E:A',      # Attacked (new in 4.0)
+            'poc': 'E:P',           # Proof-of-Concept
+            'unreported': 'E:U',    # Unreported (renamed from Unproven)
+            'notdefined': 'E:X',    # Not Defined
+            'default': 'E:X'        # Default value is Not Defined which maps to Attacked for scoring
+        }
+    }
+}
+
 def safe_request(url, headers=None, max_retries=3):
     """
     Make a request with retry logic and error handling
@@ -397,7 +480,7 @@ def normalize_version(ver):
 def determine_exploit_maturity(row):
     """
     Determine exploit maturity using a clear prioritized decision tree
-    with proper version-specific values
+    with proper version-specific values according to CVSS standards
     """
     cvss_version = normalize_version(row['cvss_version'])
     
@@ -406,35 +489,42 @@ def determine_exploit_maturity(row):
     quality_score = quality_data.get('quality_score', 0)
     exploit_sources = quality_data.get('exploit_sources', 0)
     
+    # Get appropriate metrics for this CVSS version
+    version_metrics = CVSS_VERSION_METRICS.get(cvss_version, CVSS_VERSION_METRICS.get('3.1', {}))
+    exploit_metrics = version_metrics.get('exploit_maturity', {})
+    
     # Highest priority: Known exploited vulnerabilities or high EPSS score
     if row['cisa_kev'] or row['vulncheck_kev'] or (not pd.isna(row['epss']) and row['epss'] >= EPSS_THRESHOLD):
         if cvss_version == '4.0':
-            return 'E:A'  # Attacked (CVSS 4.0)
+            return exploit_metrics.get('attacked', 'E:A')  # CVSS 4.0: Attacked 
         else:
-            return 'E:H'  # High (CVSS 2.0/3.0/3.1)
+            return exploit_metrics.get('high', 'E:H')  # CVSS 2.0/3.0/3.1: High
     
     # Second priority: Functional exploits (Metasploit frameworks or Nuclei templates)
     if row['metasploit'] or row['nuclei']:
         if cvss_version == '4.0':
-            return 'E:A'  # Attacked (CVSS 4.0)
+            return exploit_metrics.get('attacked', 'E:A')  # CVSS 4.0: Attacked
         elif quality_score >= 0.8:  # High quality exploit
-            return 'E:H'  # High (CVSS 3.0/3.1)
+            return exploit_metrics.get('high', 'E:H')  # CVSS 3.0/3.1: High
         else:
-            return 'E:F'  # Functional (CVSS 3.0/3.1)
+            return exploit_metrics.get('functional', 'E:F')  # CVSS 3.0/3.1: Functional
     
     # Third priority: Proof of concept exploits
     if row['exploitdb'] or row['poc_github']:
         if cvss_version == '2.0':
-            return 'E:POC'  # PoC (CVSS 2.0)
+            return exploit_metrics.get('poc', 'E:POC')  # CVSS 2.0: POC
         elif cvss_version == '4.0':
-            return 'E:P'  # Proof-of-concept (CVSS 4.0)
+            return exploit_metrics.get('poc', 'E:P')  # CVSS 4.0: P
         elif quality_score >= 0.8 and exploit_sources >= 2:
-            return 'E:F'  # Upgraded to Functional due to high quality
+            return exploit_metrics.get('functional', 'E:F')  # Upgraded to Functional due to high quality
         else:
-            return 'E:P'  # Proof-of-concept (CVSS 3.0/3.1)
+            return exploit_metrics.get('poc', 'E:P')  # CVSS 3.0/3.1: P
     
-    # Default: Unknown exploit maturity
-    return 'E:U'
+    # Default: Unknown or Unreported exploit maturity
+    if cvss_version == '4.0':
+        return exploit_metrics.get('unreported', 'E:U')  # Note: this is "Unreported" in 4.0
+    else:
+        return exploit_metrics.get('unproven', 'E:U')  # "Unproven" in 2.0/3.0/3.1
 
 
 def update_vector_with_maturity(base_vector, exploit_maturity):
@@ -471,20 +561,30 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
     # Normalize CVSS version
     cvss_version = normalize_version(cvss_version)
     
+    # Get the appropriate metrics for this version
+    version_metrics = CVSS_VERSION_METRICS.get(cvss_version, CVSS_VERSION_METRICS.get('3.1', {}))
+    
     # Extract the exploit maturity value (after the colon)
     e_value = exploit_maturity.split(':')[1]
     
-    # Default values by CVSS version
+    # Handle CVSS 4.0 differently - in 4.0, E is part of the Threat metrics group
     if cvss_version == '4.0':
-        # CVSS 4.0 temporal metrics
-        return update_vector_with_maturity(base_vector, exploit_maturity)
-        
+        # In CVSS 4.0, we simply update the Exploit Maturity value without adding other metrics
+        if 'CVSS:4.0' in base_vector:
+            if '/E:' not in base_vector:  # Temporal metrics not yet included
+                return update_vector_with_maturity(base_vector, exploit_maturity)
+            else:
+                return update_vector_with_maturity(base_vector, exploit_maturity)
+        else:
+            logger.warning(f"Invalid CVSS 4.0 vector format: {base_vector}")
+            return base_vector
+            
     elif cvss_version in ['3.0', '3.1']:
         # CVSS 3.0/3.1 temporal metrics
         default_temporal = {
             'E': e_value,     # Exploit Code Maturity (from our analysis)
-            'RL': 'O',        # Remediation Level (Official Fix)
-            'RC': 'C'         # Report Confidence (Confirmed)
+            'RL': version_metrics.get('remediation', {}).get('official', 'RL:O'),
+            'RC': version_metrics.get('confidence', {}).get('confirmed', 'RC:C')
         }
         
         # Check for existing temporal metrics and remove them
@@ -501,8 +601,8 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
         # CVSS 2.0 temporal metrics
         default_temporal = {
             'E': e_value,     # Exploitability (from our analysis)
-            'RL': 'OF',       # Remediation Level (Official Fix)
-            'RC': 'C'         # Report Confidence (Confirmed)
+            'RL': version_metrics.get('remediation', {}).get('official', 'RL:OF'),
+            'RC': version_metrics.get('confidence', {}).get('confirmed', 'RC:C')
         }
         
         # Check for existing temporal metrics and remove them
@@ -519,6 +619,33 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
     return update_vector_with_maturity(base_vector, exploit_maturity)
 
 
+def validate_cvss_vector(vector, version):
+    """
+    Validate the CVSS vector string according to standards
+    """
+    if not vector or vector == 'N/A':
+        return False
+        
+    # Basic patterns for different CVSS versions
+    patterns = {
+        '2.0': r'^AV:[LAN]/AC:[HML]/Au:[MSN]/C:[NPC]/I:[NPC]/A:[NPC]',
+        '3.0': r'^CVSS:3\.0/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH]',
+        '3.1': r'^CVSS:3\.1/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH]',
+        '4.0': r'^CVSS:4\.0/AV:[NALP]/AC:[LH]/AT:[NP]/PR:[NLH]/UI:[NPA]/VC:[HLN]/VI:[HLN]/VA:[HLN]/SC:[HLN]/SI:[HLN]/SA:[HLN]'
+    }
+    
+    if version in patterns:
+        pattern = patterns[version]
+        if re.match(pattern, vector):
+            return True
+        else:
+            logger.warning(f"Vector {vector} does not match pattern for CVSS {version}")
+            return False
+    else:
+        logger.warning(f"Unknown CVSS version: {version}")
+        return False
+
+
 def compute_cvss(row):
     """
     Compute CVSS score based on vector string and version
@@ -531,9 +658,14 @@ def compute_cvss(row):
             return 'UNKNOWN', 'UNKNOWN'
             
         elif cvss_version == '4.0':
-            c = cvss.CVSS4(cvss_vector)
-            # CVSS 4.0 handles temporal metrics within the score
-            return c.temporal_score, str(c.severity).upper()
+            try:
+                c = cvss.CVSS4(cvss_vector)
+                # For CVSS 4.0, get the BT (Base+Threat) score 
+                score = c.scores()[1]  # Index 1 contains BT score
+                return round(score, 1), str(c.severities()[1]).upper()
+            except Exception as e:
+                logger.error(f"Error computing CVSS 4.0 score for {row['cve']}: {e}")
+                return 'UNKNOWN', 'UNKNOWN'
             
         elif cvss_version in ['3.0', '3.1']:
             # Handle both CVSS 3.0 and 3.1
@@ -661,7 +793,7 @@ def update_temporal_score(df, epss_threshold):
         axis=1
     )
     
-    # Determine exploit maturity using the enhanced version-specific approach
+    # Determine exploit maturity using the standards-compliant approach
     logger.info("Determining exploit maturity")
     df['exploit_maturity'] = df.apply(determine_exploit_maturity, axis=1)
     
