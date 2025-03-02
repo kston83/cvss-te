@@ -240,16 +240,12 @@ def enrich_df(nvd_df):
     
     logger.info('Updating temporal scores based on exploit maturity')
     try:
-        cvss_bt_df = enrich_nvd.update_temporal_score(enriched_df, enrich_nvd.EPSS_THRESHOLD)
+        cvss_te_df = enrich_nvd.update_temporal_score(enriched_df, enrich_nvd.EPSS_THRESHOLD)
     except Exception as e:
         logger.error(f"Error updating temporal scores: {e}")
         return enriched_df
 
-    # Rename the vector column from 'cvss-bt_vector' to 'cvss-vt_vector'
-    if 'cvss-bt_vector' in cvss_bt_df.columns:
-        cvss_bt_df.rename(columns={'cvss-bt_vector': 'cvss-vt_vector'}, inplace=True)
-
-    # Define the essential columns and order them so that the VT outputs are together.
+    # Define the essential columns and order them so that the TE outputs are together.
     essential_columns = [
         'cve',
         'cvss_version',
@@ -270,34 +266,37 @@ def enrich_df(nvd_df):
         'effectiveness',
         'quality_score',
         'exploit_sources',
-        'cvss-vt_score',
-        'cvss-vt_vector', 
-        'cvss-vt_severity',
+        'cvss-te_score',
+        'cvss-te_severity',
+        'cvss-te_vector',
+        'cvss-te_enhanced_score',
+        'cvss-te_enhanced_severity',
+        'cvss-te_explanation'
     ]
 
-    available_columns = [col for col in essential_columns if col in cvss_bt_df.columns]
-    cvss_bt_df = cvss_bt_df[available_columns]
+    available_columns = [col for col in essential_columns if col in cvss_te_df.columns]
+    cvss_te_df = cvss_te_df[available_columns]
 
     # Flatten multi-line text
     def flatten_text(x):
         if isinstance(x, str):
             return x.replace('\n', ' ').replace('\r', ' ')
         return x
-    cvss_bt_df = cvss_bt_df.applymap(flatten_text)
+    cvss_te_df = cvss_te_df.applymap(flatten_text)
 
     # Convert boolean columns to integers
     bool_columns = ['cisa_kev', 'vulncheck_kev', 'exploitdb', 'metasploit', 'nuclei', 'poc_github']
     for col in bool_columns:
-        if col in cvss_bt_df.columns:
-            cvss_bt_df[col] = cvss_bt_df[col].astype(int)
+        if col in cvss_te_df.columns:
+            cvss_te_df[col] = cvss_te_df[col].astype(int)
 
-    cvss_bt_df = cvss_bt_df.sort_values(by=['published_date']).reset_index(drop=True)
+    cvss_te_df = cvss_te_df.sort_values(by=['published_date']).reset_index(drop=True)
 
-    output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cvss-vt.csv')
+    output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cvss-te.csv')
     logger.info(f'Saving enriched data to {output_file}')
-    cvss_bt_df.to_csv(output_file, index=False, mode='w')
+    cvss_te_df.to_csv(output_file, index=False, mode='w')
 
-    return cvss_bt_df
+    return cvss_te_df
 
 def save_last_run_timestamp(filename=TIMESTAMP_FILE):
     """
