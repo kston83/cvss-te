@@ -365,15 +365,40 @@ def evaluate_exploit_quality(row):
     }
 
 
+def normalize_version(ver):
+    """
+    Normalize version string for consistent comparison
+    """
+    if pd.isna(ver) or ver == 'N/A':
+        return 'N/A'
+    
+    try:
+        # Convert to string and handle different formats
+        ver_str = str(ver)
+        
+        # Check for CVSS 4.0
+        if '4' in ver_str:
+            return '4.0'
+        # Check for CVSS 3.1
+        elif '3.1' in ver_str:
+            return '3.1'
+        # Check for CVSS 3.0
+        elif '3.0' in ver_str or '3' in ver_str:
+            return '3.0'
+        # Check for CVSS 2.0
+        elif '2' in ver_str:
+            return '2.0'
+        else:
+            return ver_str
+    except Exception as e:
+        logger.warning(f"Error normalizing version {ver}: {e}")
+        return str(ver)
+
+
 def determine_exploit_maturity(row):
     """
     Determine exploit maturity using a clear prioritized decision tree
-    
-    Priority order:
-    1. CISA KEV, VulnCheck KEV, or high EPSS score (most severe)
-    2. Metasploit or Nuclei
-    3. ExploitDB or GitHub PoC
-    4. Unknown (default)
+    with proper version-specific values
     """
     cvss_version = normalize_version(row['cvss_version'])
     
@@ -387,17 +412,16 @@ def determine_exploit_maturity(row):
         if cvss_version == '4.0':
             return 'E:A'  # Attacked (CVSS 4.0)
         else:
-            return 'E:H'  # High (CVSS 2.0/3.0)
+            return 'E:H'  # High (CVSS 2.0/3.0/3.1)
     
     # Second priority: Functional exploits (Metasploit frameworks or Nuclei templates)
-    # Adjust based on quality if available
     if row['metasploit'] or row['nuclei']:
         if cvss_version == '4.0':
             return 'E:A'  # Attacked (CVSS 4.0)
         elif quality_score >= 0.8:  # High quality exploit
-            return 'E:H'  # Upgraded to High due to quality
+            return 'E:H'  # High (CVSS 3.0/3.1)
         else:
-            return 'E:F'  # Functional (CVSS 2.0/3.0)
+            return 'E:F'  # Functional (CVSS 3.0/3.1)
     
     # Third priority: Proof of concept exploits
     if row['exploitdb'] or row['poc_github']:
@@ -405,39 +429,13 @@ def determine_exploit_maturity(row):
             return 'E:POC'  # PoC (CVSS 2.0)
         elif cvss_version == '4.0':
             return 'E:P'  # Proof-of-concept (CVSS 4.0)
-        # If high quality PoC and multiple sources, consider upgrading
         elif quality_score >= 0.8 and exploit_sources >= 2:
             return 'E:F'  # Upgraded to Functional due to high quality
         else:
-            return 'E:P'  # Proof-of-concept (CVSS 3.0)
+            return 'E:P'  # Proof-of-concept (CVSS 3.0/3.1)
     
     # Default: Unknown exploit maturity
     return 'E:U'
-
-
-def normalize_version(ver):
-    """
-    Normalize version string for consistent comparison
-    """
-    if pd.isna(ver) or ver == 'N/A':
-        return 'N/A'
-    
-    try:
-        # Convert to string and handle different formats
-        ver_str = str(ver)
-        
-        # Simple pattern matching for major versions
-        if '4' in ver_str:
-            return '4.0'
-        elif '3' in ver_str:
-            return '3.0'
-        elif '2' in ver_str:
-            return '2.0'
-        else:
-            return ver_str
-    except Exception as e:
-        logger.warning(f"Error normalizing version {ver}: {e}")
-        return str(ver)
 
 
 def update_vector_with_maturity(base_vector, exploit_maturity):
@@ -461,6 +459,81 @@ def update_vector_with_maturity(base_vector, exploit_maturity):
     else:
         # Add exploit maturity component
         return f"{base_vector}/{exploit_maturity}"
+
+
+def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
+    """
+    Complete the temporal vector with default values for missing temporal metrics
+    based on CVSS version-specific requirements
+    """
+    if base_vector == 'N/A':
+        return base_vector
+        
+    # Normalize CVSS version
+    cvss_version = normalize_version(cvss_version)
+    
+    # Extract the exploit maturity value (after the colon)
+    e_value = exploit_maturity.split(':')[1]
+    
+    # Default values by CVSS version
+    if cvss_version == '4.0':
+        # CVSS 4.0 temporal metrics
+        default_temporal = {
+            'E': e_value,         # Exploit Maturity (from our analysis)
+            'X': 'C',             # Exploit Confidence (Confirmed)
+            'RE': 'O'             # Report Confidence (Official)
+        }
+        
+        # Extract the base part (everything before temporal metrics if they exist)
+        if '/T:' in base_vector:
+            base_parts = base_vector.split('/T:')[0]
+            # Add the temporal metrics prefix with our metrics
+            temporal_part = '/T:'
+            for key, value in default_temporal.items():
+                temporal_part += f"/{key}:{value}"
+            return base_parts + temporal_part
+        else:
+            # No temporal part yet, add a complete one
+            return base_vector + '/T:' + '/'.join(f"{k}:{v}" for k, v in default_temporal.items())
+        
+    elif cvss_version in ['3.0', '3.1']:
+        # CVSS 3.0/3.1 temporal metrics
+        default_temporal = {
+            'E': e_value,     # Exploit Code Maturity (from our analysis)
+            'RL': 'O',        # Remediation Level (Official Fix)
+            'RC': 'C'         # Report Confidence (Confirmed)
+        }
+        
+        # Check for existing temporal metrics and remove them
+        parts = base_vector.split('/')
+        base_parts = [part for part in parts if not (part.startswith('E:') or part.startswith('RL:') or part.startswith('RC:'))]
+        
+        # Add updated temporal metrics
+        for key, value in default_temporal.items():
+            base_parts.append(f"{key}:{value}")
+        
+        return '/'.join(base_parts)
+    
+    elif cvss_version == '2.0':
+        # CVSS 2.0 temporal metrics
+        default_temporal = {
+            'E': e_value,     # Exploitability (from our analysis)
+            'RL': 'OF',       # Remediation Level (Official Fix)
+            'RC': 'C'         # Report Confidence (Confirmed)
+        }
+        
+        # Check for existing temporal metrics and remove them
+        parts = base_vector.split('/')
+        base_parts = [part for part in parts if not (part.startswith('E:') or part.startswith('RL:') or part.startswith('RC:'))]
+        
+        # Add updated temporal metrics
+        for key, value in default_temporal.items():
+            base_parts.append(f"{key}:{value}")
+        
+        return '/'.join(base_parts)
+    
+    # For unrecognized versions, just add exploit maturity
+    return update_vector_with_maturity(base_vector, exploit_maturity)
 
 
 def generate_exploit_quality_explanation(row):
@@ -502,9 +575,11 @@ def compute_cvss(row):
             
         elif cvss_version == '4.0':
             c = cvss.CVSS4(cvss_vector)
-            return c.base_score, str(c.severity).upper()
+            # CVSS 4.0 handles temporal metrics within the score
+            return c.temporal_score, str(c.severity).upper()
             
-        elif cvss_version == '3.0':
+        elif cvss_version in ['3.0', '3.1']:
+            # Handle both CVSS 3.0 and 3.1
             c = cvss.CVSS3(cvss_vector)
             return c.temporal_score, str(c.severities()[1]).upper()
             
@@ -522,9 +597,9 @@ def compute_cvss(row):
         return 'UNKNOWN', 'UNKNOWN'
 
 
-def calculate_cvss_vt_score(row):
+def calculate_cvss_te_score(row):
     """
-    Calculate an enhanced CVSS-VT (Vulnerability Threat) score that incorporates:
+    Calculate the CVSS-TE (Threat-Enhanced) score that incorporates:
     1. Standard CVSS Base+Temporal score
     2. Exploit quality metrics
     3. Threat intelligence context
@@ -538,7 +613,7 @@ def calculate_cvss_vt_score(row):
         base_score = None
     
     if base_score is None:
-        return 'UNKNOWN', 'Unable to calculate CVSS-VT score: No valid CVSS-BT score'
+        return 'UNKNOWN', 'Unable to calculate CVSS-TE score: No valid CVSS-BT score'
     
     # Get quality metrics
     quality_score = row['quality_score']
@@ -559,7 +634,7 @@ def calculate_cvss_vt_score(row):
         threat_intel_factor += 1.0
     
     # High EPSS adds moderate weight
-    if not pd.isna(row['epss']) and row['epss'] >= 0.5:  # Higher threshold for VT
+    if not pd.isna(row['epss']) and row['epss'] >= 0.5:  # Higher threshold for TE
         threat_intel_factor += 0.5
     elif not pd.isna(row['epss']) and row['epss'] >= EPSS_THRESHOLD:
         threat_intel_factor += 0.25
@@ -570,28 +645,28 @@ def calculate_cvss_vt_score(row):
     elif exploit_sources >= 2:
         threat_intel_factor += 0.25
     
-    # Calculate final CVSS-VT score
+    # Calculate final CVSS-TE score
     # Formula: Min(10, Base_Temporal_Score * Quality_Multiplier + Threat_Intel_Factor)
-    vt_score = min(10.0, base_score * quality_multiplier + threat_intel_factor)
+    te_score = min(10.0, base_score * quality_multiplier + threat_intel_factor)
     
     # Round to one decimal place
-    vt_score = round(vt_score, 1)
+    te_score = round(te_score, 1)
     
     # Generate explanation
     explanation = (
-        f"CVSS-VT Score: {vt_score:.1f}\n"
+        f"CVSS-TE Score: {te_score:.1f}\n"
         f"- Base CVSS-BT: {base_score:.1f}\n"
         f"- Quality Multiplier: {quality_multiplier:.2f} (based on {quality_score:.2f} quality score)\n"
         f"- Threat Intel Factor: +{threat_intel_factor:.1f}\n"
         f"- Calculation: min(10, {base_score:.1f} × {quality_multiplier:.2f} + {threat_intel_factor:.1f})"
     )
     
-    return vt_score, explanation
+    return te_score, explanation
 
 
-def get_vt_severity(score):
+def get_te_severity(score):
     """
-    Determine VT severity based on score
+    Determine TE severity based on score
     """
     if score == 'UNKNOWN':
         return 'UNKNOWN'
@@ -640,14 +715,18 @@ def update_temporal_score(df, epss_threshold):
         axis=1
     )
     
-    # Determine exploit maturity using the refactored approach
+    # Determine exploit maturity using the enhanced version-specific approach
     logger.info("Determining exploit maturity")
     df['exploit_maturity'] = df.apply(determine_exploit_maturity, axis=1)
     
-    # Update vector with exploit maturity
-    logger.info("Updating CVSS vectors with exploit maturity")
+    # Update vector with complete temporal metrics
+    logger.info("Updating CVSS vectors with complete temporal metrics")
     df['cvss-bt_vector'] = df.apply(
-        lambda row: update_vector_with_maturity(row['base_vector'], row['exploit_maturity']), 
+        lambda row: complete_temporal_vector(
+            row['base_vector'], 
+            row['exploit_maturity'], 
+            row['cvss_version']
+        ), 
         axis=1
     )
     
@@ -680,13 +759,13 @@ def update_temporal_score(df, epss_threshold):
     if errors > 0:
         logger.warning(f"Encountered {errors} errors when computing CVSS scores")
     
-    # Calculate enhanced CVSS-VT scores
-    logger.info('Computing enhanced CVSS-VT scores')
-    df[['cvss-vt_score', 'cvss-vt_explanation']] = df.apply(
-        calculate_cvss_vt_score, axis=1, result_type='expand'
+    # Calculate enhanced CVSS-TE scores
+    logger.info('Computing enhanced CVSS-TE scores')
+    df[['cvss-te_score', 'cvss-te_explanation']] = df.apply(
+        calculate_cvss_te_score, axis=1, result_type='expand'
     )
     
-    # Determine VT severity based on score
-    df['cvss-vt_severity'] = df['cvss-vt_score'].apply(get_vt_severity)
+    # Determine TE severity based on score
+    df['cvss-te_severity'] = df['cvss-te_score'].apply(get_te_severity)
 
     return df
