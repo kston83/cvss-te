@@ -1,0 +1,1046 @@
+CVSS-TE SCORE ANALYSIS
+==================================================
+
+=== NOISE REDUCTION ===
+
+CVE: CVE-2021-33527
+Published: 2021-08-02
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00058
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2022-31801
+Published: 2022-06-21
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00051
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-26895
+Published: 2021-03-11
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.05073
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-26894
+Published: 2021-03-11
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.05073
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-41299
+Published: 2021-09-30
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00441
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-41301
+Published: 2021-09-30
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00287
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-42338
+Published: 2021-11-19
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00739
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-35961
+Published: 2021-07-16
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.01096
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-41290
+Published: 2021-09-30
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00283
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-40720
+Published: 2021-10-15
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.06268
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-0265
+Published: 2021-04-22
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00733
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2022-31800
+Published: 2022-06-21
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00065
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-35963
+Published: 2021-07-19
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.0069
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-14859
+Published: 2020-10-21
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.01299
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-35965
+Published: 2021-07-19
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00798
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-14855
+Published: 2020-10-21
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00417
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2022-30311
+Published: 2022-06-13
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00044
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-42311
+Published: 2021-12-15
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.25164
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-1975
+Published: 2021-11-12
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00218
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-42313
+Published: 2021-12-15
+Base Score: 10.0 (Unknown)
+TE Score: 7.4 (Unknown)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.10209
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+=== SEVERITY ELEVATION ===
+
+CVE: CVE-2021-39226
+Published: 2021-10-05
+Base Score: 7.3 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.60 points
+Score Elevation: 2.60 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96508
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2022-28810
+Published: 2022-04-18
+Base Score: 6.8 (Unknown)
+TE Score: 9.3 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.9109
+- Exploit Sources: 3.0
+- Quality Score: 0.79
+--------------------------------------------------
+
+CVE: CVE-2024-9463
+Published: 2024-10-09
+Base Score: 7.5 (Unknown)
+TE Score: 10.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96186
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2023-29298
+Published: 2023-07-12
+Base Score: 7.5 (Unknown)
+TE Score: 10.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.97226
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2022-27926
+Published: 2022-04-21
+Base Score: 6.1 (Unknown)
+TE Score: 8.6 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.95879
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2024-45195
+Published: 2024-09-04
+Base Score: 7.5 (Unknown)
+TE Score: 10.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.75577
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2022-23134
+Published: 2022-01-13
+Base Score: 5.3 (Unknown)
+TE Score: 7.8 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.83873
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2020-35234
+Published: 2020-12-14
+Base Score: 7.5 (Unknown)
+TE Score: 10.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.83703
+- Exploit Sources: 3.0
+- Quality Score: 0.78
+--------------------------------------------------
+
+CVE: CVE-2020-23972
+Published: 2020-08-27
+Base Score: 7.5 (Unknown)
+TE Score: 10.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.50626
+- Exploit Sources: 3.0
+- Quality Score: 0.77
+--------------------------------------------------
+
+CVE: CVE-2022-2551
+Published: 2022-08-22
+Base Score: 7.5 (Unknown)
+TE Score: 10.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.61588
+- Exploit Sources: 3.0
+- Quality Score: 0.77
+--------------------------------------------------
+
+CVE: CVE-2023-41266
+Published: 2023-08-29
+Base Score: 6.5 (Unknown)
+TE Score: 9.0 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.89422
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2020-5741
+Published: 2020-05-08
+Base Score: 7.2 (Unknown)
+TE Score: 9.7 (Unknown)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.74502
+- Exploit Sources: 3.0
+- Quality Score: 0.79
+--------------------------------------------------
+
+CVE: CVE-2023-4966
+Published: 2023-10-10
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96042
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2020-11738
+Published: 2020-04-13
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.97211
+- Exploit Sources: 6.0
+- Quality Score: 0.73
+--------------------------------------------------
+
+CVE: CVE-2020-17519
+Published: 2021-01-05
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.97234
+- Exploit Sources: 6.0
+- Quality Score: 0.73
+--------------------------------------------------
+
+CVE: CVE-2020-5410
+Published: 2020-06-02
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96942
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2023-49103
+Published: 2023-11-21
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.90886
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2023-50968
+Published: 2023-12-26
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.5593
+- Exploit Sources: 2.0
+- Quality Score: 0.82
+--------------------------------------------------
+
+CVE: CVE-2021-41277
+Published: 2021-11-17
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.97232
+- Exploit Sources: 4.0
+- Quality Score: 0.75
+--------------------------------------------------
+
+CVE: CVE-2024-6893
+Published: 2024-08-08
+Base Score: 7.5 (Unknown)
+TE Score: 9.9 (Unknown)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.6681
+- Exploit Sources: 2.0
+- Quality Score: 0.82
+--------------------------------------------------
+
+=== DRAMATIC DOWNGRADES ===
+
+CVE: CVE-2020-14855
+Published: 2020-10-21
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00417
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-14859
+Published: 2020-10-21
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.01299
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2022-30311
+Published: 2022-06-13
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00044
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2022-30309
+Published: 2022-06-13
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00044
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2022-30310
+Published: 2022-06-13
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00044
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-0265
+Published: 2021-04-22
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00733
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-33527
+Published: 2021-08-02
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00058
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-35961
+Published: 2021-07-16
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.01096
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-41290
+Published: 2021-09-30
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00283
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-17105
+Published: 2020-11-11
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.06249
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-17051
+Published: 2020-11-11
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.06249
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-26895
+Published: 2021-03-11
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.05073
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-26894
+Published: 2021-03-11
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.05073
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-28464
+Published: 2021-01-04
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00681
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-41299
+Published: 2021-09-30
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00441
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-17118
+Published: 2020-12-10
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.06249
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-35963
+Published: 2021-07-19
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.0069
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-35965
+Published: 2021-07-19
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00798
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2020-7745
+Published: 2020-10-19
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.03285
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+CVE: CVE-2021-37913
+Published: 2021-09-15
+Base Score: 10.0 (CRITICAL)
+TE Score: 7.4 (MEDIUM)
+Score Reduction: 2.60 points
+Score Elevation: -2.60 points
+Threat Intelligence:
+- Epss: 0.00375
+- Exploit Sources: 0.0
+- Quality Score: 0.0
+--------------------------------------------------
+
+=== DRAMATIC UPGRADES ===
+
+CVE: CVE-2021-39226
+Published: 2021-10-05
+Base Score: 7.3 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.60 points
+Score Elevation: 2.60 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96508
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2022-28810
+Published: 2022-04-18
+Base Score: 6.8 (LOW)
+TE Score: 9.3 (HIGH)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.9109
+- Exploit Sources: 3.0
+- Quality Score: 0.79
+--------------------------------------------------
+
+CVE: CVE-2022-2551
+Published: 2022-08-22
+Base Score: 7.5 (MEDIUM)
+TE Score: 10.0 (CRITICAL)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.61588
+- Exploit Sources: 3.0
+- Quality Score: 0.77
+--------------------------------------------------
+
+CVE: CVE-2023-29298
+Published: 2023-07-12
+Base Score: 7.5 (MEDIUM)
+TE Score: 10.0 (CRITICAL)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.97226
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2023-41266
+Published: 2023-08-29
+Base Score: 6.5 (LOW)
+TE Score: 9.0 (HIGH)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.89422
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2024-45195
+Published: 2024-09-04
+Base Score: 7.5 (MEDIUM)
+TE Score: 10.0 (CRITICAL)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.75577
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2020-35234
+Published: 2020-12-14
+Base Score: 7.5 (MEDIUM)
+TE Score: 10.0 (CRITICAL)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.83703
+- Exploit Sources: 3.0
+- Quality Score: 0.78
+--------------------------------------------------
+
+CVE: CVE-2020-23972
+Published: 2020-08-27
+Base Score: 7.5 (MEDIUM)
+TE Score: 10.0 (CRITICAL)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.50626
+- Exploit Sources: 3.0
+- Quality Score: 0.77
+--------------------------------------------------
+
+CVE: CVE-2024-9463
+Published: 2024-10-09
+Base Score: 7.5 (MEDIUM)
+TE Score: 10.0 (CRITICAL)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96186
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+CVE: CVE-2020-5741
+Published: 2020-05-08
+Base Score: 7.2 (MEDIUM)
+TE Score: 9.7 (HIGH)
+Score Reduction: -2.50 points
+Score Elevation: 2.50 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.74502
+- Exploit Sources: 3.0
+- Quality Score: 0.79
+--------------------------------------------------
+
+CVE: CVE-2024-6893
+Published: 2024-08-08
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- VULNCHECK_KEV
+- Epss: 0.6681
+- Exploit Sources: 2.0
+- Quality Score: 0.82
+--------------------------------------------------
+
+CVE: CVE-2024-28995
+Published: 2024-06-06
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96995
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2023-4966
+Published: 2023-10-10
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96042
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2023-44487
+Published: 2023-10-10
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.85557
+- Exploit Sources: 3.0
+- Quality Score: 0.73
+--------------------------------------------------
+
+CVE: CVE-2024-20767
+Published: 2024-03-18
+Base Score: 7.4 (MEDIUM)
+TE Score: 9.8 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96487
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2024-29059
+Published: 2024-03-23
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.84119
+- Exploit Sources: 4.0
+- Quality Score: 0.75
+--------------------------------------------------
+
+CVE: CVE-2023-49103
+Published: 2023-11-21
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.90886
+- Exploit Sources: 5.0
+- Quality Score: 0.74
+--------------------------------------------------
+
+CVE: CVE-2020-11738
+Published: 2020-04-13
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.97211
+- Exploit Sources: 6.0
+- Quality Score: 0.73
+--------------------------------------------------
+
+CVE: CVE-2020-5849
+Published: 2020-03-16
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.96811
+- Exploit Sources: 4.0
+- Quality Score: 0.76
+--------------------------------------------------
+
+CVE: CVE-2021-20124
+Published: 2021-10-13
+Base Score: 7.5 (MEDIUM)
+TE Score: 9.9 (HIGH)
+Score Reduction: -2.40 points
+Score Elevation: 2.40 points
+Threat Intelligence:
+- CISA_KEV
+- VULNCHECK_KEV
+- Epss: 0.49601
+- Exploit Sources: 3.0
+- Quality Score: 0.83
+--------------------------------------------------
+
+SUMMARY STATISTICS
+Total CVEs analyzed: 143982
+CVEs with reduced scores: 20 (0.0%)
+CVEs with elevated scores: 20 (0.0%)
