@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVSS-VT CVE Lookup</title>
+    <title>CVSS-TE CVE Lookup</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
@@ -54,7 +54,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-2 text-center">CVSS-VT CVE Lookup</h1>
+        <h1 class="text-3xl font-bold mb-2 text-center">CVSS-TE CVE Lookup</h1>
         <p class="text-center text-gray-600 mb-6">View vulnerability information with CVSS and threat indicator details</p>
         
         <div class="bg-white shadow-md rounded-lg p-6 mb-6">
@@ -92,8 +92,8 @@
                         <option value="published_date_asc">Oldest First</option>
                         <option value="base_score_desc">Highest Base Score</option>
                         <option value="base_score_asc">Lowest Base Score</option>
-                        <option value="cvss_vt_score_desc">Highest CVSS-VT Score</option>
-                        <option value="cvss_vt_score_asc">Lowest CVSS-VT Score</option>
+                        <option value="cvss_te_score_desc">Highest CVSS-TE Score</option>
+                        <option value="cvss_te_score_asc">Lowest CVSS-TE Score</option>
                     </select>
                 </div>
             </div>
@@ -160,14 +160,14 @@
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <span class="tooltip">
-                                        CVSS-VT Score
-                                        <span class="tooltiptext">Vulnerability Threat Score including exploit availability</span>
+                                        CVSS-TE Score
+                                        <span class="tooltiptext">Threat-Enhanced Score including exploit availability</span>
                                     </span>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     <span class="tooltip">
-                                        CVSS-VT Vector
-                                        <span class="tooltiptext">CVSS Vector with exploit data</span>
+                                        CVSS-TE Vector
+                                        <span class="tooltiptext">CVSS Vector with temporal metrics</span>
                                     </span>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
@@ -211,7 +211,7 @@
 
     <footer class="bg-gray-800 text-white py-4 mt-8">
         <div class="container mx-auto px-4 text-center">
-            <p>CVSS-VT CVE Lookup Tool</p>
+            <p>CVSS-TE CVE Lookup Tool</p>
         </div>
     </footer>
 
@@ -314,9 +314,9 @@
                                     </span>
                                 </div>
                                 <div>
-                                    <p class="font-medium">CVSS-VT Score</p>
-                                    <span class="inline-block ${getSeverityColor(cve['cvss-vt_score'])} px-2 py-1 rounded mt-1">
-                                        ${cve['cvss-vt_score'] || 'N/A'} (${cve['cvss-vt_severity'] || 'N/A'})
+                                    <p class="font-medium">CVSS-TE Score</p>
+                                    <span class="inline-block ${getSeverityColor(cve['cvss-te_score'])} px-2 py-1 rounded mt-1">
+                                        ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                                     </span>
                                 </div>
                             </div>
@@ -324,8 +324,8 @@
                             <h4 class="font-bold mt-4 mb-2">CVSS Vector</h4>
                             <p class="bg-gray-100 p-2 rounded text-sm font-mono">${cve.base_vector || "N/A"}</p>
                             
-                            <h4 class="font-bold mt-4 mb-2">CVSS-VT Vector</h4>
-                            <p class="bg-gray-100 p-2 rounded text-sm font-mono">${cve['cvss-vt_vector'] || "N/A"}</p>
+                            <h4 class="font-bold mt-4 mb-2">CVSS-TE Vector</h4>
+                            <p class="bg-gray-100 p-2 rounded text-sm font-mono">${cve['cvss-te_vector'] || "N/A"}</p>
                             
                             <h4 class="font-bold mt-4 mb-2">Threat Indicators</h4>
                             <div>${createThreatIndicatorBadges(cve)}</div>
@@ -367,8 +367,8 @@
                 
                 // Update stats
                 totalResults.textContent = results.length;
-                criticalCount.textContent = results.filter(cve => cve['cvss-vt_severity'] === 'CRITICAL').length;
-                highCount.textContent = results.filter(cve => cve['cvss-vt_severity'] === 'HIGH').length;
+                criticalCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'CRITICAL').length;
+                highCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'HIGH').length;
                 exploitCount.textContent = results.filter(cve => hasExploits(cve)).length;
                 
                 // Show the stats bar
@@ -388,12 +388,12 @@
                             </span>
                         </td>
                         <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded ${getSeverityColor(cve['cvss-vt_score'])}">
-                                ${cve['cvss-vt_score'] || 'N/A'} (${cve['cvss-vt_severity'] || 'N/A'})
+                            <span class="px-2 py-1 rounded ${getSeverityColor(cve['cvss-te_score'])}">
+                                ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                             </span>
                         </td>
                         <td class="px-4 py-3 text-xs font-mono">
-                            ${cve['cvss-vt_vector'] || 'N/A'}
+                            ${cve['cvss-te_vector'] || 'N/A'}
                         </td>
                         <td class="px-4 py-3">
                             ${threatIndicatorBadges}
@@ -424,7 +424,7 @@
                 // Apply severity filter
                 if (severityFilterValue) {
                     filteredResults = filteredResults.filter(cve => 
-                        cve['cvss-vt_severity'] === severityFilterValue
+                        cve['cvss-te_severity'] === severityFilterValue
                     );
                 }
 
@@ -442,11 +442,11 @@
                     case 'base_score_asc':
                         filteredResults.sort((a, b) => (parseFloat(a.base_score) || 0) - (parseFloat(b.base_score) || 0));
                         break;
-                    case 'cvss_vt_score_desc':
-                        filteredResults.sort((a, b) => (parseFloat(b['cvss-vt_score']) || 0) - (parseFloat(a['cvss-vt_score']) || 0));
+                    case 'cvss_te_score_desc':
+                        filteredResults.sort((a, b) => (parseFloat(b['cvss-te_score']) || 0) - (parseFloat(a['cvss-te_score']) || 0));
                         break;
-                    case 'cvss_vt_score_asc':
-                        filteredResults.sort((a, b) => (parseFloat(a['cvss-vt_score']) || 0) - (parseFloat(b['cvss-vt_score']) || 0));
+                    case 'cvss_te_score_asc':
+                        filteredResults.sort((a, b) => (parseFloat(a['cvss-te_score']) || 0) - (parseFloat(b['cvss-te_score']) || 0));
                         break;
                 }
 
@@ -457,7 +457,7 @@
             loadingIndicator.classList.remove('hidden');
             
             // Fetch the CSV file (from the root directory for GitHub Pages)
-            fetch('cvss-vt.csv')
+            fetch('cvss-te.csv')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -564,7 +564,7 @@
                 }
 
                 // Create CSV content
-                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-VT Score', 'CVSS-VT Severity', 'CVSS-VT Vector', 'Published Date', 'Description'];
+                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'CVSS-TE Vector', 'Published Date', 'Description'];
                 const csvContent = [
                     headers.join(','),
                     ...currentResults.map(cve => 
@@ -572,9 +572,9 @@
                             cve.cve, 
                             cve.base_score, 
                             cve.base_severity, 
-                            cve['cvss-vt_score'], 
-                            cve['cvss-vt_severity'],
-                            `"${(cve['cvss-vt_vector'] || '').replace(/"/g, '""')}"`,
+                            cve['cvss-te_score'], 
+                            cve['cvss-te_severity'],
+                            `"${(cve['cvss-te_vector'] || '').replace(/"/g, '""')}"`,
                             cve.published_date,
                             `"${(cve.description || '').replace(/"/g, '""')}"`
                         ].join(',')
@@ -586,7 +586,7 @@
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.setAttribute('href', url);
-                link.setAttribute('download', 'cvss-vt-results.csv');
+                link.setAttribute('download', 'cvss-te-results.csv');
                 link.style.visibility = 'hidden';
                 document.body.appendChild(link);
                 link.click();
