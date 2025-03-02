@@ -50,16 +50,16 @@ CVSS_VERSION_METRICS = {
             'default': 'E:U'     # Default value
         },
         'remediation': {
-            'official': 'RL:OF',  # Official Fix
-            'workaround': 'RL:W', # Workaround
-            'unavailable': 'RL:U',# Unavailable 
-            'default': 'RL:OF'    # Default value
+            'official': 'OF',     # Official Fix (without RL: prefix)
+            'workaround': 'W',    # Workaround
+            'unavailable': 'U',   # Unavailable 
+            'default': 'OF'       # Default value
         },
         'confidence': {
-            'confirmed': 'RC:C',  # Confirmed
-            'uncorroborated': 'RC:UR', # Uncorroborated
-            'unconfirmed': 'RC:UC',    # Unconfirmed
-            'default': 'RC:C'     # Default value
+            'confirmed': 'C',      # Confirmed (without RC: prefix)
+            'uncorroborated': 'UR', # Uncorroborated
+            'unconfirmed': 'UC',    # Unconfirmed
+            'default': 'C'          # Default value
         }
     },
     '3.0': {
@@ -72,19 +72,19 @@ CVSS_VERSION_METRICS = {
             'default': 'E:U'      # Default value
         },
         'remediation': {
-            'official': 'RL:O',    # Official Fix
-            'temporary': 'RL:T',   # Temporary Fix
-            'workaround': 'RL:W',  # Workaround
-            'unavailable': 'RL:U', # Unavailable
-            'notdefined': 'RL:X',  # Not Defined
-            'default': 'RL:O'      # Default value
+            'official': 'O',        # Official Fix (without RL: prefix)
+            'temporary': 'T',       # Temporary Fix
+            'workaround': 'W',      # Workaround
+            'unavailable': 'U',     # Unavailable
+            'notdefined': 'X',      # Not Defined
+            'default': 'O'          # Default value
         },
         'confidence': {
-            'confirmed': 'RC:C',     # Confirmed
-            'reasonable': 'RC:R',    # Reasonable
-            'unknown': 'RC:U',       # Unknown
-            'notdefined': 'RC:X',    # Not Defined
-            'default': 'RC:C'        # Default value
+            'confirmed': 'C',       # Confirmed (without RC: prefix)
+            'reasonable': 'R',      # Reasonable
+            'unknown': 'U',         # Unknown
+            'notdefined': 'X',      # Not Defined
+            'default': 'C'          # Default value
         }
     },
     '3.1': {
@@ -97,19 +97,19 @@ CVSS_VERSION_METRICS = {
             'default': 'E:U'      # Default value
         },
         'remediation': {
-            'official': 'RL:O',    # Official Fix
-            'temporary': 'RL:T',   # Temporary Fix
-            'workaround': 'RL:W',  # Workaround
-            'unavailable': 'RL:U', # Unavailable
-            'notdefined': 'RL:X',  # Not Defined
-            'default': 'RL:O'      # Default value
+            'official': 'O',        # Official Fix (without RL: prefix)
+            'temporary': 'T',       # Temporary Fix
+            'workaround': 'W',      # Workaround
+            'unavailable': 'U',     # Unavailable
+            'notdefined': 'X',      # Not Defined
+            'default': 'O'          # Default value
         },
         'confidence': {
-            'confirmed': 'RC:C',     # Confirmed
-            'reasonable': 'RC:R',    # Reasonable
-            'unknown': 'RC:U',       # Unknown
-            'notdefined': 'RC:X',    # Not Defined
-            'default': 'RC:C'        # Default value
+            'confirmed': 'C',       # Confirmed (without RC: prefix)
+            'reasonable': 'R',      # Reasonable
+            'unknown': 'U',         # Unknown
+            'notdefined': 'X',      # Not Defined
+            'default': 'C'          # Default value
         }
     },
     '4.0': {
@@ -122,6 +122,7 @@ CVSS_VERSION_METRICS = {
         }
     }
 }
+
 
 def safe_request(url, headers=None, max_retries=3):
     """
@@ -583,8 +584,8 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
         # CVSS 3.0/3.1 temporal metrics
         default_temporal = {
             'E': e_value,     # Exploit Code Maturity (from our analysis)
-            'RL': version_metrics.get('remediation', {}).get('official', 'RL:O'),
-            'RC': version_metrics.get('confidence', {}).get('confirmed', 'RC:C')
+            'RL': version_metrics.get('remediation', {}).get('official', 'O'),
+            'RC': version_metrics.get('confidence', {}).get('confirmed', 'C')
         }
         
         # Check for existing temporal metrics and remove them
@@ -601,8 +602,8 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
         # CVSS 2.0 temporal metrics
         default_temporal = {
             'E': e_value,     # Exploitability (from our analysis)
-            'RL': version_metrics.get('remediation', {}).get('official', 'RL:OF'),
-            'RC': version_metrics.get('confidence', {}).get('confirmed', 'RC:C')
+            'RL': version_metrics.get('remediation', {}).get('official', 'OF'),
+            'RC': version_metrics.get('confidence', {}).get('confirmed', 'C')
         }
         
         # Check for existing temporal metrics and remove them
@@ -617,7 +618,6 @@ def complete_temporal_vector(base_vector, exploit_maturity, cvss_version):
     
     # For unrecognized versions, just add exploit maturity
     return update_vector_with_maturity(base_vector, exploit_maturity)
-
 
 def validate_cvss_vector(vector, version):
     """
