@@ -1,5 +1,4 @@
 name: Update Vulnerability Data
-
 on:
   schedule:
     # Run at 7 AM EST daily (12:00 UTC)
@@ -14,6 +13,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        # Important: Fetch all history for all branches
+        fetch-depth: 0
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -32,44 +34,46 @@ jobs:
     
     - name: Run NVD Processing Script
       env:
-        # If you need API keys, use GitHub secrets
         VULNCHECK_API_KEY: ${{ secrets.VULNCHECK_API_KEY }}
       run: |
         python code/process_nvd.py
     
-    - name: Check for changes
-      id: check_changes
-      run: |
-        git add cvss-te.csv code/last_run.txt data/epss/epss_scores.csv
-        if git diff --staged --quiet; then
-          echo "No changes to commit"
-          echo "changes_exist=false" >> $GITHUB_OUTPUT
-        else
-          echo "Changes detected"
-          echo "changes_exist=true" >> $GITHUB_OUTPUT
-        fi
-    
-    - name: Create Pull Request
-      if: steps.check_changes.outputs.changes_exist == 'true'
+    - name: Check for changes and create branch
+      id: changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
         BRANCH_NAME="vulnerability-data-update-$(date +"%Y%m%d%H%M%S")"
         
-        # Create a new branch
-        git checkout -b $BRANCH_NAME
-        
-        # Stage changes
+        # Stage specific files
         git add cvss-te.csv code/last_run.txt data/epss/epss_scores.csv
         
-        # Commit changes
-        git commit -m "Update vulnerability data: $TIMESTAMP"
-        
-        # Push the branch
-        git push origin $BRANCH_NAME
-        
-        # Create pull request
+        # Check if there are changes
+        if ! git diff --staged --quiet; then
+          echo "Changes detected"
+          echo "changes_exist=true" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          
+          # Commit changes
+          git commit -m "Update vulnerability data: $TIMESTAMP"
+          
+          # Create a new branch and push changes
+          git checkout -b $BRANCH_NAME
+          git push origin $BRANCH_NAME
+        else
+          echo "No changes to commit"
+          echo "changes_exist=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Create and Merge Pull Request
+      if: steps.changes.outputs.changes_exist == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH_NAME: ${{ steps.changes.outputs.branch_name }}
+        TIMESTAMP: ${{ steps.changes.outputs.timestamp }}
+      run: |
         gh pr create \
           --base main \
           --head $BRANCH_NAME \
@@ -83,5 +87,5 @@ Includes:
 
 This is an automated update processed by GitHub Actions."
         
-        # Automatically merge the PR
+        # Merge PR automatically
         gh pr merge $BRANCH_NAME --merge
