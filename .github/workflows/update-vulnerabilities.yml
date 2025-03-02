@@ -78,14 +78,16 @@ jobs:
           --base main \
           --head $BRANCH_NAME \
           --title "Update Vulnerability Data: $TIMESTAMP" \
-          --body "Automated update of vulnerability data
+          --body <<EOF
+        Automated update of vulnerability data
 
-Includes:
-- Updated CVSS-TE CSV
-- Updated last run timestamp
-- Updated EPSS scores
+        Includes:
+        - Updated CVSS-TE CSV
+        - Updated last run timestamp
+        - Updated EPSS scores
 
-This is an automated update processed by GitHub Actions."
+        This is an automated update processed by GitHub Actions.
+        EOF
         
         # Merge PR automatically
         gh pr merge $BRANCH_NAME --merge
