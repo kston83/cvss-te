@@ -3,81 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVSS-TE CVE Lookup</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>CVSS-TE Vulnerability Lookup</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/dist/tailwind.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <style>
-        /* Loading spinner */
-        .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #09f;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Tooltip styles */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 220px;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -110px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold mb-2 text-center">CVSS-TE CVE Lookup</h1>
-        <p class="text-center text-gray-600 mb-1">View vulnerability information with CVSS and threat indicator details</p>
-        <p class="text-center text-gray-500 text-sm mb-6" id="last-update-time">Last Updated: Loading...</p>
-        
-        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
-            <div class="mb-4">
-                <label for="cve-input" class="block text-gray-700 font-bold mb-2">
-                    Enter CVE(s) - Comma Separated
+<body class="bg-gray-50 min-h-screen font-sans">
+    <header class="bg-gradient-to-r from-slate-800 to-slate-700 py-8 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-white mb-2 text-center">CVSS-TE Vulnerability Lookup</h1>
+            <p class="text-center text-gray-200 mb-1">Threat-Enhanced Vulnerability Scoring System</p>
+            <p class="text-center text-gray-300 text-sm" id="last-update-time">Last Updated: Loading...</p>
+        </div>
+    </header>
+    
+    <main class="container mx-auto px-4 py-8">
+        <!-- Search Panel -->
+        <section class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
+            <div class="mb-6">
+                <label for="cve-input" class="block text-gray-700 font-bold mb-2 text-lg">
+                    CVE Lookup
                 </label>
                 <input 
                     type="text" 
                     id="cve-input" 
                     placeholder="CVE-2021-44228, CVE-2023-23397" 
-                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
-                <p class="text-gray-500 text-sm mt-1">
-                    Separate multiple CVEs with commas
+                <p class="text-gray-500 text-sm mt-2">
+                    Enter one or more CVE IDs separated by commas
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                    <label for="severity-filter" class="block text-gray-700 text-sm mb-1">Severity Filter</label>
-                    <select id="severity-filter" class="px-3 py-2 border rounded-lg w-full">
+                    <label for="severity-filter" class="block text-gray-700 font-medium mb-2">Severity Filter</label>
+                    <select id="severity-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         <option value="">All Severities</option>
                         <option value="CRITICAL">Critical</option>
                         <option value="HIGH">High</option>
@@ -87,8 +48,8 @@
                 </div>
 
                 <div>
-                    <label for="sort-by" class="block text-gray-700 text-sm mb-1">Sort Results</label>
-                    <select id="sort-by" class="px-3 py-2 border rounded-lg w-full">
+                    <label for="sort-by" class="block text-gray-700 font-medium mb-2">Sort Results</label>
+                    <select id="sort-by" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         <option value="published_date_desc">Most Recent First</option>
                         <option value="published_date_asc">Oldest First</option>
                         <option value="base_score_desc">Highest Base Score</option>
@@ -100,120 +61,126 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="flex flex-col sm:flex-row gap-4">
                 <button 
                     id="search-btn" 
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex-1"
                 >
-                    Search CVEs
+                    Search Vulnerabilities
                 </button>
                 <button 
                     id="export-btn" 
-                    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex-1"
                 >
                     Export Results
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div id="stats-bar" class="bg-white shadow-md rounded-lg p-4 mb-6 hidden">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                    <p class="text-sm text-gray-500">Total Results</p>
-                    <p id="total-results" class="text-xl font-bold">0</p>
+        <!-- Stats Panel -->
+        <section id="stats-bar" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden border border-gray-100">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="text-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <p class="text-sm text-gray-500 mb-1">Total Results</p>
+                    <p id="total-results" class="text-2xl font-bold text-gray-800">0</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-500">Critical</p>
-                    <p id="critical-count" class="text-xl font-bold text-red-600">0</p>
+                <div class="text-center p-4 bg-red-50 rounded-lg border border-red-100">
+                    <p class="text-sm text-gray-500 mb-1">Critical</p>
+                    <p id="critical-count" class="text-2xl font-bold text-red-600">0</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-500">High</p>
-                    <p id="high-count" class="text-xl font-bold text-orange-600">0</p>
+                <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-100">
+                    <p class="text-sm text-gray-500 mb-1">High</p>
+                    <p id="high-count" class="text-2xl font-bold text-orange-600">0</p>
                 </div>
-                <div>
-                    <p class="text-sm text-gray-500">With Exploits</p>
-                    <p id="exploit-count" class="text-xl font-bold text-purple-600">0</p>
+                <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-100">
+                    <p class="text-sm text-gray-500 mb-1">With Exploits</p>
+                    <p id="exploit-count" class="text-2xl font-bold text-purple-600">0</p>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div id="loading" class="text-center hidden">
+        <!-- Loading Indicator -->
+        <div id="loading" class="text-center hidden py-8">
             <div class="spinner"></div>
-            <p class="text-gray-600">Loading data...</p>
+            <p class="text-gray-600 mt-4">Loading vulnerability data...</p>
         </div>
 
-        <div id="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative hidden" role="alert">
-            <span class="block sm:inline" id="error-message"></span>
+        <!-- Error Message -->
+        <div id="error" class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8 hidden" role="alert">
+            <span class="block sm:inline font-medium" id="error-message"></span>
         </div>
 
-        <div id="results-container" class="hidden">
-            <h2 class="text-xl font-bold mb-3">Search Results</h2>
-            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <!-- Results Section -->
+        <section id="results-container" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Search Results</h2>
+                <span id="results-count" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">Showing 0 results</span>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                 <div class="overflow-x-auto">
-                    <table class="min-w-full" id="results-table">
-                        <thead class="bg-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200" id="results-table">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <span class="tooltip">
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <div class="tooltip">
                                         CVSS Base
                                         <span class="tooltiptext">Standard CVSS Base Score</span>
-                                    </span>
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <span class="tooltip">
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <div class="tooltip">
                                         CVSS-BT
                                         <span class="tooltiptext">Standards-compliant CVSS Base+Temporal Score</span>
-                                    </span>
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <span class="tooltip">
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <div class="tooltip">
                                         CVSS-TE
                                         <span class="tooltiptext">Threat-Enhanced Score with intelligence context</span>
-                                    </span>
+                                    </div>
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
+                                <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
                             </tr>
                         </thead>
-                        <tbody id="results-body">
+                        <tbody id="results-body" class="bg-white divide-y divide-gray-200">
                             <!-- Results will be populated here -->
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="mt-4 text-right">
-                <span id="results-count" class="text-sm text-gray-600">Showing 0 results</span>
-            </div>
-        </div>
+        </section>
         
         <!-- Modal for CVE details -->
         <div id="cve-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto m-4">
-                <div class="p-4 border-b flex justify-between items-center">
-                    <h3 class="text-lg font-bold" id="modal-title">CVE Details</h3>
-                    <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+            <div class="bg-white rounded-xl max-w-4xl w-full max-h-screen overflow-y-auto m-4 shadow-2xl">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800" id="modal-title">CVE Details</h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                <div class="p-4" id="modal-content">
+                <div class="p-6" id="modal-content">
                     <!-- Modal content will be populated here -->
                 </div>
-                <div class="p-4 border-t flex justify-end">
-                    <button id="close-modal-btn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                <div class="p-6 border-t border-gray-200 flex justify-end">
+                    <button id="close-modal-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
                         Close
                     </button>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
-    <footer class="bg-gray-800 text-white py-4 mt-8">
+    <footer class="bg-slate-800 text-white py-6 mt-12">
         <div class="container mx-auto px-4 text-center">
-            <p>CVSS-TE CVE Lookup Tool</p>
+            <p class="mb-2">CVSS-TE: Threat-Enhanced Vulnerability Scoring System</p>
+            <p class="text-sm text-gray-400">Enhancing vulnerability prioritization with threat intelligence context</p>
         </div>
     </footer>
 
@@ -274,7 +241,7 @@
                 if (numScore >= 9.0) return 'bg-red-600 text-white';
                 if (numScore >= 7.0) return 'bg-orange-600 text-white';
                 if (numScore >= 4.0) return 'bg-yellow-500 text-black';
-                return 'bg-green-500 text-white';
+                return 'bg-green-600 text-white';
             }
 
             function hasExploits(cve) {
@@ -287,22 +254,22 @@
                     { key: 'cisa_kev', label: 'CISA KEV', color: 'bg-red-500' },
                     { key: 'vulncheck_kev', label: 'VulnCheck KEV', color: 'bg-orange-500' },
                     { key: 'exploitdb', label: 'Exploit DB', color: 'bg-yellow-500' },
-                    { key: 'metasploit', label: 'Metasploit', color: 'bg-green-500' },
-                    { key: 'nuclei', label: 'Nuclei', color: 'bg-blue-500' },
-                    { key: 'poc_github', label: 'GitHub PoC', color: 'bg-purple-500' }
+                    { key: 'metasploit', label: 'Metasploit', color: 'bg-green-600' },
+                    { key: 'nuclei', label: 'Nuclei', color: 'bg-blue-600' },
+                    { key: 'poc_github', label: 'GitHub PoC', color: 'bg-purple-600' }
                 ];
 
                 const badges = indicators
                     // Filter based on truthy values (1) rather than strictly === true
                     .filter(indicator => cve[indicator.key])
                     .map(indicator => 
-                        `<span class="inline-block ${indicator.color} text-white text-xs px-2 py-1 rounded mr-1 mb-1">
+                        `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${indicator.color} text-white mr-1 mb-1">
                             ${indicator.label}
                         </span>`
                     )
                     .join('');
                 
-                return badges || '<span class="text-gray-500">No Active Indicators</span>';
+                return badges || '<span class="text-gray-500 text-sm italic">No Active Indicators</span>';
             }
 
             function showCVEDetails(cve) {
@@ -311,61 +278,74 @@
                 let cveDescription = cve.description || "No description available";
                 
                 const content = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <h4 class="font-bold mb-2">Vulnerability Details</h4>
-                            <p class="mb-2"><span class="font-medium">Published:</span> ${formatDate(cve.published_date)}</p>
-                            <p class="mb-2"><span class="font-medium">Last Modified:</span> ${formatDate(cve.last_modified_date)}</p>
-                            <p class="mb-4"><span class="font-medium">Description:</span></p>
-                            <p class="bg-gray-100 p-3 rounded text-sm">${cveDescription}</p>
+                            <h4 class="font-bold mb-3 text-lg text-gray-800">Vulnerability Details</h4>
+                            <div class="mb-4 space-y-2">
+                                <p><span class="font-medium text-gray-700">Published:</span> ${formatDate(cve.published_date)}</p>
+                                <p><span class="font-medium text-gray-700">Last Modified:</span> ${formatDate(cve.last_modified_date)}</p>
+                            </div>
+                            <p class="mb-3 font-medium text-gray-700">Description:</p>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800">
+                                ${cveDescription}
+                            </div>
                         </div>
                         <div>
-                            <h4 class="font-bold mb-2">Scoring</h4>
-                            <div class="grid grid-cols-2 gap-4 mb-2">
-                                <div>
-                                    <p class="font-medium">CVSS Base</p>
-                                    <span class="inline-block ${getSeverityColor(cve.base_score)} px-2 py-1 rounded mt-1">
+                            <h4 class="font-bold mb-3 text-lg text-gray-800">Scoring</h4>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <p class="font-medium text-gray-700 mb-2">CVSS Base</p>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve.base_score)}">
                                         ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
                                     </span>
                                 </div>
-                                <div>
-                                    <p class="font-medium">CVSS-BT (Temporal)</p>
-                                    <span class="inline-block ${getSeverityColor(cve['cvss-bt_score'])} px-2 py-1 rounded mt-1">
+                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                    <p class="font-medium text-gray-700 mb-2">CVSS-BT (Temporal)</p>
+                                    <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-bt_score'])}">
                                         ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
                                     </span>
                                 </div>
                             </div>
-                            <div class="mb-4">
-                                <p class="font-medium">CVSS-TE (Enhanced)</p>
-                                <span class="inline-block ${getSeverityColor(cve['cvss-te_score'])} px-2 py-1 rounded mt-1">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                                <p class="font-medium text-gray-700 mb-2">CVSS-TE (Enhanced)</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-te_score'])}">
                                     ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                                 </span>
                             </div>
                             
-                            <h4 class="font-bold mt-4 mb-2">CVSS Vector</h4>
-                            <p class="bg-gray-100 p-2 rounded text-sm font-mono">${cve.base_vector || "N/A"}</p>
+                            <h4 class="font-bold mt-6 mb-2 text-gray-800">CVSS Vectors</h4>
+                            <div class="mb-3">
+                                <p class="text-sm text-gray-600 mb-1">Base Vector:</p>
+                                <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve.base_vector || "N/A"}</p>
+                            </div>
+                            <div class="mb-4">
+                                <p class="text-sm text-gray-600 mb-1">CVSS-BT Vector:</p>
+                                <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve['cvss-bt_vector'] || "N/A"}</p>
+                            </div>
                             
-                            <h4 class="font-bold mt-4 mb-2">CVSS-BT Vector</h4>
-                            <p class="bg-gray-100 p-2 rounded text-sm font-mono">${cve['cvss-bt_vector'] || "N/A"}</p>
+                            <h4 class="font-bold mt-6 mb-2 text-gray-800">Threat Intelligence</h4>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                                <p class="font-medium text-gray-700 mb-2">Indicators:</p>
+                                <div>${createThreatIndicatorBadges(cve)}</div>
+                            </div>
                             
-                            <h4 class="font-bold mt-4 mb-2">Threat Indicators</h4>
-                            <div>${createThreatIndicatorBadges(cve)}</div>
-                            
-                            <h4 class="font-bold mt-4 mb-2">Exploit Quality</h4>
-                            <div class="bg-gray-100 p-2 rounded text-sm">
-                                <p>Quality Score: ${(cve.quality_score * 100).toFixed(1)}%</p>
-                                <p>Exploit Sources: ${cve.exploit_sources}</p>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <h4 class="font-medium text-gray-700 mb-2">Exploit Quality</h4>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <p><span class="font-medium">Quality Score:</span> ${(cve.quality_score * 100).toFixed(1)}%</p>
+                                    <p><span class="font-medium">Exploit Sources:</span> ${cve.exploit_sources}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="mt-4">
-                        <h4 class="font-bold mb-2">References</h4>
-                        <div class="bg-gray-100 p-3 rounded">
-                            <a href="https://nvd.nist.gov/vuln/detail/${cve.cve}" target="_blank" class="text-blue-600 hover:underline block mb-2">
+                    <div class="mt-6">
+                        <h4 class="font-bold mb-3 text-lg text-gray-800">References</h4>
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <a href="https://nvd.nist.gov/vuln/detail/${cve.cve}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline block mb-2">
                                 NIST NVD Database: ${cve.cve}
                             </a>
-                            <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cve.cve}" target="_blank" class="text-blue-600 hover:underline block">
+                            <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cve.cve}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline block">
                                 Mitre CVE: ${cve.cve}
                             </a>
                         </div>
@@ -405,32 +385,32 @@
                     const threatIndicatorBadges = createThreatIndicatorBadges(cve);
                     
                     const row = document.createElement('tr');
-                    row.className = 'border-b hover:bg-gray-50';
+                    row.className = 'hover:bg-gray-50 transition-colors';
                     
                     row.innerHTML = `
-                        <td class="px-4 py-3 whitespace-nowrap">${cve.cve}</td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded ${getSeverityColor(cve.base_score)}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${cve.cve}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve.base_score)}">
                                 ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
                             </span>
                         </td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded ${getSeverityColor(cve['cvss-bt_score'])}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve['cvss-bt_score'])}">
                                 ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
                             </span>
                         </td>
-                        <td class="px-4 py-3">
-                            <span class="px-2 py-1 rounded ${getSeverityColor(cve['cvss-te_score'])}">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve['cvss-te_score'])}">
                                 ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                             </span>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="px-6 py-4">
                             ${threatIndicatorBadges}
                         </td>
-                        <td class="px-4 py-3">${formatDate(cve.published_date)}</td>
-                        <td class="px-4 py-3 text-center">
-                            <button class="view-details bg-blue-500 hover:bg-blue-700 text-white text-xs font-bold py-1 px-2 rounded">
-                                View
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(cve.published_date)}</td>
+                        <td class="px-6 py-4 text-center">
+                            <button class="view-details bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1 px-3 rounded-lg transition-colors">
+                                Details
                             </button>
                         </td>
                     `;
