@@ -11,9 +11,12 @@ This repository enhances vulnerability scoring through two complementary approac
 1. **CVSS-BT (Base + Temporal)**: Enriches standard CVSS scores by incorporating the Exploit Code Maturity/Exploitability (E) Temporal Metric using the official CVSS specification.
 2. **CVSS-TE (Threat-Enhanced)**: An advanced scoring system that extends beyond CVSS-BT by incorporating detailed exploit quality metrics and additional threat intelligence context.
 
-While both scoring systems utilize the same data sources, they serve different purposes:
-- **CVSS-BT** adheres to the official CVSS standards and is directly compatible with existing vulnerability management tools
-- **CVSS-TE** provides a more nuanced, actionable score that better reflects real-world threat levels beyond what standard CVSS temporal metrics can express
+## 🌐 Interactive Web Lookup Tool
+- **Live Web Interface**: [CVSS-TE Vulnerability Lookup](https://kston83.github.io/cvss-te/)
+- Search and filter vulnerabilities by CVE
+- Detailed vulnerability insights
+- Export results to CSV
+- Real-time threat intelligence visualization
 
 ## Data Sources
 
@@ -40,8 +43,6 @@ The CVSS-BT score incorporates the Exploit Code Maturity/Exploitability (E) Temp
 | **Functional (F)** (CVSS 2.0/3.0/3.1) | Functional exploit code is available that works in most situations | • Has Metasploit module (quality score < 0.8)<br>• Has Nuclei template<br>• Multiple high-quality PoCs (quality score ≥ 0.8 with multiple sources) |
 | **Proof-of-Concept (P)** (CVSS 3.0/3.1/4.0) | Proof-of-concept exploit code is available but may not work in all situations | • Found in ExploitDB<br>• Has GitHub PoC |
 | **Unproven (U)** / **Unreported (U)** | No exploit code is available, or an exploit is theoretical | • Not present in any of the above threat intelligence sources |
-
-The CVSS-BT score is calculated using the standard CVSS calculator with the updated vector string that includes the Exploit Code Maturity value.
 
 ### EPSS Threshold Explanation
 
@@ -91,10 +92,6 @@ Where:
 - Formula: 0.8 + (quality_score * 0.4)
 - If no exploits exist: defaults to 1.0 (neutral impact)
 
-This means a vulnerability with a high CVSS-BT score but only low-quality exploits could see its severity downgraded by up to 20%. For example, a vulnerability with CVSS-BT of 8.0 but poor-quality exploits (quality score of 0.2) would have:
-- Quality Multiplier: 0.8 + (0.2 * 0.4) = 0.88
-- Adjusted score before threat intel: 8.0 * 0.88 = 7.04
-
 **Threat Intel Factor**: Adds 0-2 points based on additional threat intelligence
 - CISA KEV or VulnCheck KEV presence: +1.0
 - High EPSS score (≥ 0.5): +0.5
@@ -113,32 +110,6 @@ This means a vulnerability with a high CVSS-BT score but only low-quality exploi
 | 0.1 - 3.9 | LOW |
 | 0.0 | NONE |
 
-## Relationship Between CVSS-BT and CVSS-TE
-
-While both scoring systems utilize the same data sources (Metasploit, Nuclei, etc.), they analyze this information differently:
-
-### CVSS-BT Approach
-CVSS-BT follows the official CVSS methodology for temporal scoring:
-- Uses the presence of exploits in sources like Metasploit or Nuclei to assign a single Exploit Code Maturity value (E:H, E:F, E:P, etc.)
-- Applies a standardized CVSS calculation to modify the base score
-- Uses a binary assessment (exploit exists/doesn't exist) without considering exploit quality
-- Results in a score that strictly follows the CVSS standard
-
-### CVSS-TE Approach
-CVSS-TE provides a more nuanced analysis of the same data:
-- Starts with the CVSS-BT score as its foundation
-- Evaluates the *quality* of exploits across multiple dimensions (reliability, ease of use, effectiveness)
-- Considers the *quantity* of exploit sources as an additional factor
-- Assigns different weights to different intelligence sources
-- Incorporates prediction data (EPSS) in a more granular way
-- Can both increase AND decrease scores based on real-world threat context
-
-This dual approach gives security teams flexibility:
-- CVSS-BT scores for compliance and compatibility with standard tools
-- CVSS-TE scores for more actionable prioritization decisions
-
-While there is some overlap in the data used, the analytical approaches and outcomes serve different purposes.
-
 ## Default Behavior When No Threat Intelligence Exists
 
 When a vulnerability has no data from any external threat intelligence sources:
@@ -154,77 +125,49 @@ When a vulnerability has no data from any external threat intelligence sources:
 - The Threat Intel Factor is 0.0 (no intelligence signals to consider)
 - The resulting CVSS-TE score equals the CVSS-BT score: `CVSS-TE = CVSS-BT * 1.0 + 0.0 = CVSS-BT`
 
-This approach ensures that vulnerabilities with no known exploits or threat intelligence are appropriately downgraded from their base scores, reducing noise by highlighting vulnerabilities with actual exploitation evidence rather than theoretical concerns.
-
 ## Practical Application
 
-A key benefit of CVSS-TE is its ability to reduce noise in vulnerability management by providing more accurate threat context. The system doesn't simply escalate scores—it refines them based on real-world exploitation factors:
+A key benefit of CVSS-TE is its ability to reduce noise in vulnerability management by providing more accurate threat context:
 
 1. **Reduces False Positives**: Vulnerabilities with high base scores but no exploits in the wild are appropriately downgraded
-2. **Highlights True Threats**: Vulnerabilities actively being exploited are properly prioritized even if their base scores appear moderate
-3. **Contextualizes Vulnerability Feeds**: Helps security teams filter through the overwhelming volume of CVEs to focus on what matters
-
-Security professionals can utilize CVSS-TE scores to:
-
-1. **Prioritize vulnerability remediation** based on actual threat context rather than just technical impact
-2. **Allocate security resources** more effectively by focusing on vulnerabilities with higher threat potential
-3. **Communicate risk** to stakeholders with more nuanced threat information
-4. **Compare threat levels** across different types of vulnerabilities using a standardized approach
+2. **Highlights True Threats**: Vulnerabilities actively being exploited are properly prioritized
+3. **Contextualizes Vulnerability Feeds**: Helps security teams filter through overwhelming CVE volumes
 
 ## Example Interpretations
 
 ### Example 1: Reducing Noise
-A vulnerability with:
-- CVSS Base Score: 9.1 (Critical)
-- CVSS-BT Score: 7.3 (High) - Reduced due to only proof-of-concept exploits
-- CVSS-TE Score: 6.8 (Medium) - Further reduced due to low-quality exploits and no threat intelligence signals
-
-This demonstrates how CVSS-TE helps reduce false positives by appropriately downgrading vulnerabilities that appear severe but lack real-world exploitation evidence.
+**CVE with Base Score 9.1**
+- CVSS-BT Score: 7.3 (High)
+- CVSS-TE Score: 6.8 (Medium)
+- Demonstrates downgrading of vulnerabilities with limited exploitation evidence
 
 ### Example 2: Highlighting True Threats
-A vulnerability with:
-- CVSS Base Score: 7.5 (High)
-- CVSS-BT Score: 6.5 (Medium) - Standard temporal adjustment
-- CVSS-TE Score: 8.3 (High) - Elevated due to high-quality exploits, inclusion in KEV catalogs, and high EPSS score
-
-This shows how CVSS-TE can identify truly concerning vulnerabilities that might be underrepresented by standard scoring approaches.
+**CVE with Base Score 7.5**
+- CVSS-BT Score: 6.5 (Medium)
+- CVSS-TE Score: 8.3 (High)
+- Shows elevation of scores for vulnerabilities with high-quality exploits and active threats
 
 ### Example 3: Clarifying Risk Levels
-A vulnerability with:
-- CVSS Base Score: 5.5 (Medium)
-- CVSS-BT Score: 5.5 (Medium) - No change with standard temporal factors
-- CVSS-TE Score: 7.8 (High) - Significantly elevated due to active exploitation in the wild
-
-This highlights vulnerabilities that might be overlooked due to moderate base scores but represent significant real-world threats.
+**CVE with Base Score 5.5**
+- CVSS-BT Score: 5.5 (Medium)
+- CVSS-TE Score: 7.8 (High)
+- Highlights vulnerabilities with significant real-world threat potential
 
 ## Caveats and Considerations
 
-- The CVSS-TE score is not an official CVSS metric and represents a custom approach to vulnerability prioritization
-- The exploit quality metrics are based on empirical observations and security research but may not reflect all real-world scenarios
-- While EPSS 0.36 is used as a threshold for exploit maturity calculation, we do not recommend using this percentage as a general threshold for prioritization
-- CVSS-TE scores should be considered alongside other contextual factors such as asset criticality, data sensitivity, and compensating controls
+- CVSS-TE is a custom approach to vulnerability prioritization
+- Exploit quality metrics are based on empirical observations
+- Scores should be considered alongside other contextual factors
 
 ## Standards Compliance
 
-This tool is designed to be compliant with all versions of the CVSS standard:
+Compatible with:
 - CVSS 2.0
 - CVSS 3.0 
 - CVSS 3.1
 - CVSS 4.0
 
-The implementation carefully handles version-specific terminology and scoring mechanics to ensure accurate scores across all CVSS versions.
-
 ## Acknowledgements
 
 This product uses VulnCheck KEV and EPSS scores but is not endorsed or certified by the EPSS SIG or VulnCheck.
 
-## Updates from Original Implementation
-
-This repository represents an evolution of the original CVSS-BT approach with the following enhancements:
-
-1. Introduction of the CVSS-TE scoring system that extends beyond temporal metrics
-2. More sophisticated exploit quality assessment based on multiple dimensions
-3. Integration of additional threat intelligence context in score calculation
-4. Enhanced vector string handling for CVSS 4.0 compatibility
-5. Standards compliance with CVSS 2.0, 3.0, 3.1, and 4.0
-6. Optimized code for improved performance and reduced storage requirements
