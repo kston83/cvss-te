@@ -3,7 +3,6 @@ on:
   schedule:
     # Run at 7 AM EST daily (12:00 UTC)
     - cron: '0 12 * * *'
-  # Allow manual trigger
   workflow_dispatch:
 
 jobs:
@@ -65,7 +64,6 @@ jobs:
         else
           echo "No changes to commit"
           echo "changes_exist=false" >> $GITHUB_OUTPUT
-        fi
     
     - name: Create and Merge Pull Request
       if: steps.changes.outputs.changes_exist == 'true'
@@ -78,16 +76,7 @@ jobs:
           --base main \
           --head $BRANCH_NAME \
           --title "Update Vulnerability Data: $TIMESTAMP" \
-          --body <<EOF
-        Automated update of vulnerability data
-
-        Includes:
-        - Updated CVSS-TE CSV
-        - Updated last run timestamp
-        - Updated EPSS scores
-
-        This is an automated update processed by GitHub Actions.
-        EOF
+          --body "Automated update of vulnerability data includes updated CVSS-TE CSV, last run timestamp, and EPSS scores."
         
         # Merge PR automatically
         gh pr merge $BRANCH_NAME --merge
