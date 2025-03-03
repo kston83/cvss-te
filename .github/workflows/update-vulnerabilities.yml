@@ -42,6 +42,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
+        set -e
         TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
         BRANCH_NAME="vulnerability-data-update-$(date +"%Y%m%d%H%M%S")"
         
@@ -51,19 +52,20 @@ jobs:
         # Check if there are changes
         if ! git diff --staged --quiet; then
           echo "Changes detected"
-          echo "changes_exist=true" >> $GITHUB_OUTPUT
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "changes_exist=true" >> "${GITHUB_OUTPUT}"
+          echo "branch_name=${BRANCH_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "timestamp=${TIMESTAMP}" >> "${GITHUB_OUTPUT}"
           
           # Commit changes
-          git commit -m "Update vulnerability data: $TIMESTAMP"
+          git commit -m "Update vulnerability data: ${TIMESTAMP}"
           
           # Create a new branch and push changes
-          git checkout -b $BRANCH_NAME
-          git push origin $BRANCH_NAME
+          git checkout -b "${BRANCH_NAME}"
+          git push origin "${BRANCH_NAME}"
         else
           echo "No changes to commit"
-          echo "changes_exist=false" >> $GITHUB_OUTPUT
+          echo "changes_exist=false" >> "${GITHUB_OUTPUT}"
+        fi
     
     - name: Create and Merge Pull Request
       if: steps.changes.outputs.changes_exist == 'true'
@@ -72,11 +74,12 @@ jobs:
         BRANCH_NAME: ${{ steps.changes.outputs.branch_name }}
         TIMESTAMP: ${{ steps.changes.outputs.timestamp }}
       run: |
+        set -e
         gh pr create \
           --base main \
-          --head $BRANCH_NAME \
-          --title "Update Vulnerability Data: $TIMESTAMP" \
+          --head "${BRANCH_NAME}" \
+          --title "Update Vulnerability Data: ${TIMESTAMP}" \
           --body "Automated update of vulnerability data includes updated CVSS-TE CSV, last run timestamp, and EPSS scores."
         
         # Merge PR automatically
-        gh pr merge $BRANCH_NAME --merge
+        gh pr merge "${BRANCH_NAME}" --merge
