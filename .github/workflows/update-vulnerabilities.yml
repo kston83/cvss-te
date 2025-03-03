@@ -73,21 +73,19 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH_NAME: ${{ steps.changes.outputs.branch_name }}
         TIMESTAMP: ${{ steps.changes.outputs.timestamp }}
-      run: |
-        gh pr create \
-          --base main \
-          --head $BRANCH_NAME \
-          --title "Update Vulnerability Data: $TIMESTAMP" \
-          --body <<EOF
-        Automated update of vulnerability data
+run: |
+  gh pr create \
+    --base main \
+    --head $BRANCH_NAME \
+    --title "Update Vulnerability Data: $TIMESTAMP" \
+    --body "$(cat <<EOF
+Automated update of vulnerability data
 
-        Includes:
-        - Updated CVSS-TE CSV
-        - Updated last run timestamp
-        - Updated EPSS scores
+Includes:
+- Updated CVSS-TE CSV
+- Updated last run timestamp
+- Updated EPSS scores
 
-        This is an automated update processed by GitHub Actions.
-        EOF
-        
-        # Merge PR automatically
-        gh pr merge $BRANCH_NAME --merge
+This is an automated update processed by GitHub Actions.
+EOF
+)"
