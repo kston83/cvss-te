@@ -4,8 +4,6 @@ Thank you to the original author of the tool [cvss-bt](https://github.com/t0sche
 
 ## Overview
 
-![cvss-te lookup tool interface](image.png)
-
 The Common Vulnerability Scoring System (CVSS) is an industry standard for assessing the severity of security vulnerabilities. While the National Vulnerability Database (NVD) provides CVSS Base scores, these alone are insufficient for effective vulnerability prioritization. 
 
 This repository enhances vulnerability scoring through two complementary approaches:
@@ -14,6 +12,7 @@ This repository enhances vulnerability scoring through two complementary approac
 2. **CVSS-TE (Threat-Enhanced)**: An advanced scoring system that extends beyond CVSS-BT by incorporating detailed exploit quality metrics and additional threat intelligence context.
 
 ## 🌐 Interactive Web Lookup Tool
+![cvss-te lookup tool interface](image.png)
 - **Live Web Interface**: [CVSS-TE Vulnerability Lookup](https://kston83.github.io/cvss-te/)
 - Search and filter vulnerabilities by CVE
 - Detailed vulnerability insights
