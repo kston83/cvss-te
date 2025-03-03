@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Import the enrichment module
 try:
-    import enrich_nvd as enrich_nvd
+    import enrich_nvd
 except ImportError:
     logger.error("Could not import enrich module. Make sure enrich_nvd.py is in the same directory.")
     sys.exit(1)
@@ -31,7 +31,10 @@ EPSS_CSV = f'https://epss.cyentia.com/epss_scores-{date.today()}.csv.gz'
 EPSS_BACKUP = './data/epss/epss_scores.csv'  # Backup location
 TIMESTAMP_FILE = './last_run.txt'
 
-# NVD Feed URLs - complete history from 2002 to present
+def create_directories():
+    """Create necessary directories for the script"""
+    os.makedirs('./data/epss', exist_ok=True)
+
 def generate_nvd_feeds():
     """Generate a dictionary of all NVD feeds from 2002 to present year"""
     feeds = {
@@ -47,10 +50,6 @@ def generate_nvd_feeds():
 
 NVD_FEEDS = generate_nvd_feeds()
 
-def create_directories():
-    """Create necessary directories for the script"""
-    os.makedirs('./data/epss', exist_ok=True)
-
 def download_nvd_feeds(max_retries=3, retry_delay=5):
     """
     Download NVD feeds, decompress them, and save to the current directory.
@@ -63,6 +62,7 @@ def download_nvd_feeds(max_retries=3, retry_delay=5):
     for feed_name, feed_url in NVD_FEEDS.items():
         output_path = f"nvdcve-{feed_name}.json"
         
+        # Skip downloading if file exists and is less than 1 day old (except for recent/modified)
         if os.path.exists(output_path) and feed_name not in ['recent', 'modified']:
             file_age = time.time() - os.path.getmtime(output_path)
             file_size = os.path.getsize(output_path)
@@ -89,6 +89,7 @@ def download_nvd_feeds(max_retries=3, retry_delay=5):
                 logger.info(f"Saved {output_path}: {file_size} bytes")
                 downloaded_files.append(output_path)
                 
+                # Add delay between downloads (except for last item)
                 if feed_name not in ['recent', 'modified']:
                     time.sleep(1)
                 
@@ -136,72 +137,6 @@ def download_epss_data(url, backup_path=None):
             logger.error("No backup EPSS data available")
             raise
 
-def validate_cvss_vector(vector_str, version):
-    """
-    Validates CVSS vector string according to the specified version.
-    
-    Args:
-        vector_str (str): CVSS vector string
-        version (str): CVSS version (2.0, 3.0, 3.1, 4.0)
-        
-    Returns:
-        bool: True if valid, False otherwise
-    """
-    if not vector_str or vector_str == 'N/A':
-        return False
-    
-    # Basic validation patterns for different CVSS versions
-    patterns = {
-        '2.0': r'^AV:[LAN]/AC:[HML]/Au:[MSN]/C:[NPC]/I:[NPC]/A:[NPC]',
-        '3.0': r'^CVSS:3\.0/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH]',
-        '3.1': r'^CVSS:3\.1/AV:[NALP]/AC:[LH]/PR:[NLH]/UI:[NR]/S:[UC]/C:[NLH]/I:[NLH]/A:[NLH]',
-        '4.0': r'^CVSS:4\.0/AV:[NALP]/AC:[LH]/AT:[NP]/PR:[NLH]/UI:[NPA]/VC:[HLN]/VI:[HLN]/VA:[HLN]/SC:[HLN]/SI:[HLN]/SA:[HLN]'
-    }
-    
-    if version in patterns:
-        # Check if the vector string matches the basic pattern for the specified version
-        if re.match(patterns[version], vector_str):
-            return True
-        else:
-            logger.warning(f"CVSS vector string '{vector_str}' does not match pattern for version {version}")
-    else:
-        logger.warning(f"Unknown CVSS version: {version}")
-    
-    return False
-
-def normalize_cvss_version(version_str):
-    """
-    Normalize CVSS version string to standard format (2.0, 3.0, 3.1, 4.0)
-    
-    Args:
-        version_str (str): Version string to normalize
-        
-    Returns:
-        str: Normalized version string
-    """
-    if not version_str or version_str == 'N/A':
-        return 'N/A'
-    
-    version_str = str(version_str).strip()
-    
-    # CVSS 4.0
-    if version_str.startswith('4') or version_str == '4.0':
-        return '4.0'
-    
-    # CVSS 3.1
-    elif version_str == '3.1':
-        return '3.1'
-    
-    # CVSS 3.0
-    elif version_str == '3.0' or version_str == '3':
-        return '3.0'
-    
-    # CVSS 2.0
-    elif version_str.startswith('2') or version_str == '2.0':
-        return '2.0'
-    
-    return version_str
-
 def process_nvd_files():
     """
     Processes the NVD JSON files and returns a DataFrame containing the data.
@@ -240,31 +175,21 @@ def process_nvd_files():
                             base_severity = entry['impact']['metricV40']['baseSeverity']
                             base_vector = entry['impact']['metricV40']['vectorString']
                             
-                            # Validate vector string format
-                            if not validate_cvss_vector(base_vector, cvss_version):
-                                logger.warning(f"Invalid CVSS 4.0 vector string for {cve}: {base_vector}")
-                                
                         elif 'baseMetricV3' in entry.get('impact', {}):
                             # CVSS 3.x handling - determine if 3.0 or 3.1
-                            cvss_version = normalize_cvss_version(entry['impact']['baseMetricV3']['cvssV3'].get('version', '3.0'))
+                            version_str = entry['impact']['baseMetricV3']['cvssV3'].get('version', '3.0')
+                            cvss_version = '3.1' if '3.1' in version_str else '3.0'
                             base_score = entry['impact']['baseMetricV3']['cvssV3']['baseScore']
                             base_severity = entry['impact']['baseMetricV3']['cvssV3']['baseSeverity']
                             base_vector = entry['impact']['baseMetricV3']['cvssV3']['vectorString']
                             
-                            # Validate vector string format
-                            if not validate_cvss_vector(base_vector, cvss_version):
-                                logger.warning(f"Invalid CVSS {cvss_version} vector string for {cve}: {base_vector}")
-                                
                         elif 'baseMetricV2' in entry.get('impact', {}):
                             # CVSS 2.0 handling
-                            cvss_version = '2.0'  # Always 2.0 for baseMetricV2
+                            cvss_version = '2.0'
                             base_score = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('baseScore', 'N/A')
                             base_severity = entry.get('impact', {}).get('baseMetricV2', {}).get('severity', 'N/A')
                             base_vector = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('vectorString', 'N/A')
                             
-                            # Validate vector string format
-                            if not validate_cvss_vector(base_vector, cvss_version):
-                                logger.warning(f"Invalid CVSS 2.0 vector string for {cve}: {base_vector}")
                         else:
                             # No CVSS data available
                             cvss_version = 'N/A'
@@ -376,14 +301,13 @@ def enrich_df(nvd_df):
         'cvss-bt_vector',
         # TE score (enhanced)
         'cvss-te_score',
-        'cvss-te_severity',
-        'cvss-te_explanation'
+        'cvss-te_severity'
     ]
 
     available_columns = [col for col in essential_columns if col in cvss_te_df.columns]
     cvss_te_df = cvss_te_df[available_columns]
 
-    # Flatten multi-line text
+    # Flatten multi-line text in description fields
     def flatten_text(x):
         if isinstance(x, str):
             return x.replace('\n', ' ').replace('\r', ' ')
@@ -396,9 +320,10 @@ def enrich_df(nvd_df):
         if col in cvss_te_df.columns:
             cvss_te_df[col] = cvss_te_df[col].astype(int)
 
+    # Sort by published date
     cvss_te_df = cvss_te_df.sort_values(by=['published_date']).reset_index(drop=True)
 
-    # Save both the combined data
+    # Save the enriched data
     output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cvss-te.csv')
     logger.info(f'Saving enriched data to {output_file}')
     cvss_te_df.to_csv(output_file, index=False, mode='w')
@@ -440,6 +365,14 @@ def main():
         enriched_df = enrich_df(nvd_df)
         if enriched_df.empty:
             logger.warning("Enrichment resulted in empty dataset. Check for errors.")
+        
+        # Fix any problematic CVEs with unknown scores
+        fixed_df = enrich_nvd.recalculate_problem_cves(enriched_df)
+        
+        # Save final output
+        output_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'cvss-te.csv')
+        logger.info(f'Saving final data to {output_file}')
+        fixed_df.to_csv(output_file, index=False, mode='w')
         
         save_last_run_timestamp(TIMESTAMP_FILE)
         logger.info("NVD processing and enrichment pipeline completed successfully")
