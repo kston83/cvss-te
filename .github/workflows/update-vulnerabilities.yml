@@ -34,17 +34,28 @@ jobs:
         VULNCHECK_API_KEY: ${{ secrets.VULNCHECK_API_KEY }}
       run: python code/process_nvd.py
 
-    - name: Commit and push changes
-      uses: EndBug/add-and-commit@v9
-      with:
-        message: "Updated CVSS-BT data $(date +%Y-%m-%d)"
-        add: "cvss-bt.csv, code/last_run.txt"
-
-    - name: Create Release
-      uses: ChanTsune/release-with-commit@v3.0.0
-      with:
-        regexp: "Updated CVSS-BT data (\\d{4}-\\d{2}-\\d{2})"
-        release_name: "CVSS-BT Update $1"
-        tag_name: "v$1"
+    - name: Commit and push if there are changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -e
+        TAG="v$(date +%Y%m%d%H%M%S)"
+        
+        git add cvss-bt.csv code/last_run.txt
+        git commit -m "Updated CVSS-BT data $(date +%Y-%m-%d)" -a || exit 0
+        git push origin HEAD:main
+        
+        # Create a new tag
+        git tag -a "$TAG" -m "Updated CVSS-BT data $(date +%Y-%m-%d)"
+        git push origin "$TAG"
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.TAG }}
+        release_name: Release ${{ env.TAG }}
+        draft: false
+        prerelease: false
