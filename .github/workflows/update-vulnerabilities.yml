@@ -46,7 +46,7 @@ jobs:
         git push origin HEAD:main
         
         # Create a new tag
-        git tag -a "$TAG" -m "Updated CVSS-BT data $(date +%Y-%m-%d)"
+        git tag -a "$TAG" -m "Updated CVSS-TE data $(date +%Y-%m-%d)"
         git push origin "$TAG"
 
     - name: Create Release
