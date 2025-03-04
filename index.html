@@ -363,60 +363,81 @@
                 modalTitle.textContent = `${cve.cve} Details`;
                 
                 const content = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
+                    <!-- Single-column header for basic info -->
+                    <div class="mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <h4 class="font-bold mb-3 text-lg text-gray-800">Vulnerability Details</h4>
-                            <div class="mb-4 space-y-2">
-                                <p><span class="font-medium text-gray-700">Published:</span> ${formatDate(cve.published_date)}</p>
-                                <p><span class="font-medium text-gray-700">Last Modified:</span> ${formatDate(cve.last_modified_date)}</p>
-                                <p><span class="font-medium text-gray-700">Assigner:</span> ${cve.assigner || 'N/A'}</p>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Published:</p>
+                                    <p class="font-medium">${formatDate(cve.published_date)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Last Modified:</p>
+                                    <p class="font-medium">${formatDate(cve.last_modified_date)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Assigner:</p>
+                                    <p class="font-medium">${cve.assigner || 'N/A'}</p>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="font-bold mb-3 text-lg text-gray-800">Scoring</h4>
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                    <p class="font-medium text-gray-700 mb-2">CVSS Base</p>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve.base_score)}">
-                                        ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
-                                    </span>
-                                </div>
-                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                    <p class="font-medium text-gray-700 mb-2">CVSS-BT (Temporal)</p>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-bt_score'])}">
-                                        ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
-                                    </span>
-                                </div>
+                    </div>
+
+                    <!-- CVSS Scores row - 3 score boxes side by side -->
+                    <div class="mb-6">
+                        <h4 class="font-bold mb-3 text-lg text-gray-800">Scoring</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="font-medium text-gray-700 mb-2">CVSS Base</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve.base_score)}">
+                                    ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
+                                </span>
                             </div>
-                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="font-medium text-gray-700 mb-2">CVSS-BT (Temporal)</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-bt_score'])}">
+                                    ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
+                                </span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                 <p class="font-medium text-gray-700 mb-2">CVSS-TE (Enhanced)</p>
                                 <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-te_score'])}">
                                     ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                                 </span>
                             </div>
-                            
-                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
-                                <h4 class="font-medium text-gray-700 mb-2">EPSS Score</h4>
-                                <div class="flex items-center">
-                                    <div class="epss-progress-container mr-2">
-                                        <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
-                                    </div>
-                                    <span class="text-sm ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- EPSS Score -->
+                    <div class="mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 class="font-medium text-gray-700 mb-2">EPSS Score</h4>
+                            <div class="flex items-center mb-2">
+                                <div class="epss-progress-container mr-2 flex-grow">
+                                    <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Exploit Prediction Scoring System - likelihood of exploitation</p>
+                                <span class="text-sm ${getEpssTextColor(cve.epss)} ml-2 w-16 text-right">${(cve.epss * 100).toFixed(2)}%</span>
                             </div>
-                            
-                            <h4 class="font-bold mt-6 mb-2 text-gray-800">CVSS Vectors</h4>
+                            <p class="text-xs text-gray-500">Exploit Prediction Scoring System - likelihood of exploitation</p>
+                        </div>
+                    </div>
+
+                    <!-- Two-column layout for vectors and threat intel -->
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold mb-3 text-lg text-gray-800">CVSS Vectors</h4>
                             <div class="mb-3">
                                 <p class="text-sm text-gray-600 mb-1">Base Vector:</p>
                                 <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve.base_vector || "N/A"}</p>
                             </div>
-                            <div class="mb-4">
+                            <div>
                                 <p class="text-sm text-gray-600 mb-1">CVSS-BT Vector:</p>
                                 <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve['cvss-bt_vector'] || "N/A"}</p>
                             </div>
-                            
-                            <h4 class="font-bold mt-6 mb-2 text-gray-800">Threat Intelligence</h4>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-3 text-lg text-gray-800">Threat Intelligence</h4>
                             <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
                                 <p class="font-medium text-gray-700 mb-2">Indicators:</p>
                                 <div>${createThreatIndicatorBadges(cve)}</div>
@@ -434,6 +455,7 @@
                         </div>
                     </div>
                     
+                    <!-- References -->
                     <div class="mt-6">
                         <h4 class="font-bold mb-3 text-lg text-gray-800">References</h4>
                         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -453,7 +475,7 @@
                 // Prevent background scrolling
                 document.body.style.overflow = 'hidden';
             }
-
+            
             function closeDetailModal() {
                 modal.classList.add('hidden');
                 // Restore background scrolling
