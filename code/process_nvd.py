@@ -1,15 +1,13 @@
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from pathlib import Path
 import pandas as pd
 import logging
 import json
 import requests
 import gzip
-import io
 import os
 import sys
 import time
-import re
 
 # Configure logging
 logging.basicConfig(
@@ -333,11 +331,14 @@ def enrich_df(nvd_df):
 def save_last_run_timestamp(filename=TIMESTAMP_FILE):
     """
     Save the current timestamp as the last run timestamp in a file.
+    Uses proper UTC time to match the 'Z' suffix in the ISO 8601 format.
     """
     try:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         with open(filename, 'w', encoding='utf-8') as f:
-            timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
+            # Create a timezone-aware UTC datetime
+            utc_now = datetime.now(timezone.utc)
+            timestamp = utc_now.strftime('%Y-%m-%dT%H:%M:%SZ')
             f.write(timestamp)
         logger.info(f"Timestamp saved: {timestamp}")
     except Exception as e:
