@@ -27,7 +27,7 @@ except ImportError:
 # Constants
 EPSS_CSV = f'https://epss.cyentia.com/epss_scores-{date.today()}.csv.gz'
 EPSS_BACKUP = './data/epss/epss_scores.csv'  # Backup location
-TIMESTAMP_FILE = './last_run.txt'
+TIMESTAMP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'last_run.txt')
 
 def create_directories():
     """Create necessary directories for the script"""

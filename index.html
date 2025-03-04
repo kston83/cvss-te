@@ -57,6 +57,7 @@
                         <option value="cvss-bt_score_desc">Highest CVSS-BT Score</option>
                         <option value="cvss-bt_score_asc">Lowest CVSS-BT Score</option>
                         <option value="cvss-te_score_desc">Highest CVSS-TE Score</option>
+                        <option value="epss_desc">Highest EPSS Score</option>
                     </select>
                 </div>
             </div>
@@ -79,20 +80,24 @@
 
         <!-- Stats Panel -->
         <section id="stats-bar" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden border border-gray-100">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="text-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <p class="text-sm text-gray-500 mb-1">Total Results</p>
                     <p id="total-results" class="text-2xl font-bold text-gray-800">0</p>
                 </div>
-                <div class="text-center p-4 bg-red-50 rounded-lg border border-red-100">
+                <div class="text-center p-3 bg-red-50 rounded-lg border border-red-100">
                     <p class="text-sm text-gray-500 mb-1">Critical</p>
                     <p id="critical-count" class="text-2xl font-bold text-red-600">0</p>
                 </div>
-                <div class="text-center p-4 bg-orange-50 rounded-lg border border-orange-100">
+                <div class="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
                     <p class="text-sm text-gray-500 mb-1">High</p>
                     <p id="high-count" class="text-2xl font-bold text-orange-600">0</p>
                 </div>
-                <div class="text-center p-4 bg-purple-50 rounded-lg border border-purple-100">
+                <div class="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+                    <p class="text-sm text-gray-500 mb-1">High EPSS</p>
+                    <p id="high-epss-count" class="text-2xl font-bold text-orange-600">0</p>
+                </div>
+                <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
                     <p class="text-sm text-gray-500 mb-1">With Exploits</p>
                     <p id="exploit-count" class="text-2xl font-bold text-purple-600">0</p>
                 </div>
@@ -172,6 +177,12 @@
                                         <span class="tooltiptext">Threat-Enhanced Score - considers exploit quality, threat intelligence factors, and real-world exploitation for better prioritization</span>
                                     </div>
                                 </th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <div class="tooltip">
+                                        EPSS
+                                        <span class="tooltiptext">Exploit Prediction Scoring System - likelihood of exploitation</span>
+                                    </div>
+                                </th>
                                 <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
                                 <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
                                 <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
@@ -248,9 +259,31 @@
                 .then(response => response.text())
                 .then(text => {
                     const lastRunDate = new Date(text.trim());
-                    // Show both UTC and local time for clarity
-                    const utcTime = lastRunDate.toISOString().replace('T', ' ').substr(0, 19) + ' UTC';
-                    const localTime = lastRunDate.toLocaleString() + ' (Local)';
+                    
+                    // Format for UTC display with more explicit options
+                    const utcOptions = { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZone: 'UTC' 
+                    };
+                    const utcTime = lastRunDate.toLocaleString('en-US', utcOptions) + ' UTC';
+                    
+                    // Format for local display with explicit timezone
+                    const localOptions = { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        timeZoneName: 'short'
+                    };
+                    const localTime = lastRunDate.toLocaleString('en-US', localOptions);
+                    
                     lastUpdateTime.textContent = `Last Updated: ${utcTime} / ${localTime}`;
                 })
                 .catch(error => {
@@ -276,6 +309,26 @@
                 if (numScore >= 7.0) return 'bg-orange-600 text-white';
                 if (numScore >= 4.0) return 'bg-yellow-500 text-black';
                 return 'bg-green-600 text-white';
+            }
+            
+            // Function for progress bar coloring
+            function getEpssColor(epssScore) {
+                if (!epssScore && epssScore !== 0) return 'epss-unknown';
+                const score = parseFloat(epssScore);
+                if (score >= 0.5) return 'epss-critical'; // Critical (50%+)
+                if (score >= 0.36) return 'epss-high';    // High (36%+) - EPSS threshold from README
+                if (score >= 0.1) return 'epss-medium';   // Medium (10-36%)
+                return 'epss-low';                        // Low (<10%)
+            }
+            
+            // Function for text coloring (separate from progress bar)
+            function getEpssTextColor(epssScore) {
+                if (!epssScore && epssScore !== 0) return 'epss-text-unknown';
+                const score = parseFloat(epssScore);
+                if (score >= 0.5) return 'epss-text-critical';   // Critical
+                if (score >= 0.36) return 'epss-text-high';      // High
+                if (score >= 0.1) return 'epss-text-medium';     // Medium
+                return 'epss-text-low';                          // Low
             }
 
             function hasExploits(cve) {
@@ -309,55 +362,82 @@
             function showCVEDetails(cve) {
                 modalTitle.textContent = `${cve.cve} Details`;
                 
-                let cveDescription = cve.description || "No description available";
-                
                 const content = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
+                    <!-- Single-column header for basic info -->
+                    <div class="mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                             <h4 class="font-bold mb-3 text-lg text-gray-800">Vulnerability Details</h4>
-                            <div class="mb-4 space-y-2">
-                                <p><span class="font-medium text-gray-700">Published:</span> ${formatDate(cve.published_date)}</p>
-                                <p><span class="font-medium text-gray-700">Last Modified:</span> ${formatDate(cve.last_modified_date)}</p>
-                            </div>
-                            <p class="mb-3 font-medium text-gray-700">Description:</p>
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800">
-                                ${cveDescription}
+                            <div class="grid grid-cols-3 gap-4">
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Published:</p>
+                                    <p class="font-medium">${formatDate(cve.published_date)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Last Modified:</p>
+                                    <p class="font-medium">${formatDate(cve.last_modified_date)}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-gray-600 mb-1">Assigner:</p>
+                                    <p class="font-medium">${cve.assigner || 'N/A'}</p>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <h4 class="font-bold mb-3 text-lg text-gray-800">Scoring</h4>
-                            <div class="grid grid-cols-2 gap-4 mb-4">
-                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                    <p class="font-medium text-gray-700 mb-2">CVSS Base</p>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve.base_score)}">
-                                        ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
-                                    </span>
-                                </div>
-                                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                    <p class="font-medium text-gray-700 mb-2">CVSS-BT (Temporal)</p>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-bt_score'])}">
-                                        ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
-                                    </span>
-                                </div>
+                    </div>
+
+                    <!-- CVSS Scores row - 3 score boxes side by side -->
+                    <div class="mb-6">
+                        <h4 class="font-bold mb-3 text-lg text-gray-800">Scoring</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="font-medium text-gray-700 mb-2">CVSS Base</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve.base_score)}">
+                                    ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
+                                </span>
                             </div>
-                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="font-medium text-gray-700 mb-2">CVSS-BT (Temporal)</p>
+                                <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-bt_score'])}">
+                                    ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
+                                </span>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                 <p class="font-medium text-gray-700 mb-2">CVSS-TE (Enhanced)</p>
                                 <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-te_score'])}">
                                     ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                                 </span>
                             </div>
-                            
-                            <h4 class="font-bold mt-6 mb-2 text-gray-800">CVSS Vectors</h4>
+                        </div>
+                    </div>
+                    
+                    <!-- EPSS Score -->
+                    <div class="mb-6">
+                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <h4 class="font-medium text-gray-700 mb-2">EPSS Score</h4>
+                            <div class="flex items-center mb-2">
+                                <div class="epss-progress-container mr-2 flex-grow">
+                                    <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
+                                </div>
+                                <span class="text-sm ${getEpssTextColor(cve.epss)} ml-2 w-16 text-right">${(cve.epss * 100).toFixed(2)}%</span>
+                            </div>
+                            <p class="text-xs text-gray-500">Exploit Prediction Scoring System - likelihood of exploitation</p>
+                        </div>
+                    </div>
+
+                    <!-- Two-column layout for vectors and threat intel -->
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold mb-3 text-lg text-gray-800">CVSS Vectors</h4>
                             <div class="mb-3">
                                 <p class="text-sm text-gray-600 mb-1">Base Vector:</p>
                                 <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve.base_vector || "N/A"}</p>
                             </div>
-                            <div class="mb-4">
+                            <div>
                                 <p class="text-sm text-gray-600 mb-1">CVSS-BT Vector:</p>
                                 <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve['cvss-bt_vector'] || "N/A"}</p>
                             </div>
-                            
-                            <h4 class="font-bold mt-6 mb-2 text-gray-800">Threat Intelligence</h4>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-3 text-lg text-gray-800">Threat Intelligence</h4>
                             <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
                                 <p class="font-medium text-gray-700 mb-2">Indicators:</p>
                                 <div>${createThreatIndicatorBadges(cve)}</div>
@@ -368,11 +448,14 @@
                                 <div class="grid grid-cols-2 gap-2 text-sm">
                                     <p><span class="font-medium">Quality Score:</span> ${(cve.quality_score * 100).toFixed(1)}%</p>
                                     <p><span class="font-medium">Exploit Sources:</span> ${cve.exploit_sources}</p>
+                                    <p><span class="font-medium">Reliability:</span> ${(cve.reliability * 100).toFixed(0)}%</p>
+                                    <p><span class="font-medium">Ease of Use:</span> ${(cve.ease_of_use * 100).toFixed(0)}%</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
+                    <!-- References -->
                     <div class="mt-6">
                         <h4 class="font-bold mb-3 text-lg text-gray-800">References</h4>
                         <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -392,7 +475,7 @@
                 // Prevent background scrolling
                 document.body.style.overflow = 'hidden';
             }
-
+            
             function closeDetailModal() {
                 modal.classList.add('hidden');
                 // Restore background scrolling
@@ -410,6 +493,7 @@
                 totalResults.textContent = results.length;
                 criticalCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'CRITICAL').length;
                 highCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'HIGH').length;
+                document.getElementById('high-epss-count').textContent = results.filter(cve => cve.epss && cve.epss >= 0.36).length;
                 exploitCount.textContent = results.filter(cve => hasExploits(cve)).length;
                 
                 // Show the stats bar
@@ -437,6 +521,14 @@
                             <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve['cvss-te_score'])}">
                                 ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
                             </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="epss-table-container mr-2">
+                                    <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
+                                </div>
+                                <span class="text-xs ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
+                            </div>
                         </td>
                         <td class="px-6 py-4">
                             ${threatIndicatorBadges}
@@ -493,6 +585,9 @@
                         break;
                     case 'cvss-te_score_desc':
                         filteredResults.sort((a, b) => (parseFloat(b['cvss-te_score']) || 0) - (parseFloat(a['cvss-te_score']) || 0));
+                        break;
+                    case 'epss_desc':
+                        filteredResults.sort((a, b) => (parseFloat(b.epss) || 0) - (parseFloat(a.epss) || 0));
                         break;
                 }
 
@@ -610,7 +705,7 @@
                 }
 
                 // Create CSV content
-                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-BT Score', 'CVSS-BT Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'CVSS-BT Vector', 'Published Date', 'Description'];
+                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-BT Score', 'CVSS-BT Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'EPSS Score', 'CVSS-BT Vector', 'Published Date'];
                 const csvContent = [
                     headers.join(','),
                     ...currentResults.map(cve => 
@@ -622,9 +717,9 @@
                             cve['cvss-bt_severity'],
                             cve['cvss-te_score'], 
                             cve['cvss-te_severity'],
+                            cve.epss ? (cve.epss * 100).toFixed(2) + '%' : '0%',
                             `"${(cve['cvss-bt_vector'] || '').replace(/"/g, '""')}"`,
-                            cve.published_date,
-                            `"${(cve.description || '').replace(/"/g, '""')}"`
+                            cve.published_date
                         ].join(',')
                     )
                 ].join('\n');
