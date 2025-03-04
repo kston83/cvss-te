@@ -311,6 +311,7 @@
                 return 'bg-green-600 text-white';
             }
             
+            // Function for progress bar coloring
             function getEpssColor(epssScore) {
                 if (!epssScore && epssScore !== 0) return 'epss-unknown';
                 const score = parseFloat(epssScore);
@@ -320,13 +321,14 @@
                 return 'epss-low';                        // Low (<10%)
             }
             
+            // Function for text coloring (separate from progress bar)
             function getEpssTextColor(epssScore) {
-                if (!epssScore && epssScore !== 0) return 'epss-unknown';
+                if (!epssScore && epssScore !== 0) return 'epss-text-unknown';
                 const score = parseFloat(epssScore);
-                if (score >= 0.5) return 'epss-critical'; // Critical
-                if (score >= 0.36) return 'epss-high';    // High
-                if (score >= 0.1) return 'epss-medium';   // Medium
-                return 'epss-low';                        // Low
+                if (score >= 0.5) return 'epss-text-critical';   // Critical
+                if (score >= 0.36) return 'epss-text-high';      // High
+                if (score >= 0.1) return 'epss-text-medium';     // Medium
+                return 'epss-text-low';                          // Low
             }
 
             function hasExploits(cve) {
@@ -360,8 +362,6 @@
             function showCVEDetails(cve) {
                 modalTitle.textContent = `${cve.cve} Details`;
                 
-                let cveDescription = cve.description || "No description available";
-                
                 const content = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
@@ -369,10 +369,7 @@
                             <div class="mb-4 space-y-2">
                                 <p><span class="font-medium text-gray-700">Published:</span> ${formatDate(cve.published_date)}</p>
                                 <p><span class="font-medium text-gray-700">Last Modified:</span> ${formatDate(cve.last_modified_date)}</p>
-                            </div>
-                            <p class="mb-3 font-medium text-gray-700">Description:</p>
-                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-800">
-                                ${cveDescription}
+                                <p><span class="font-medium text-gray-700">Assigner:</span> ${cve.assigner || 'N/A'}</p>
                             </div>
                         </div>
                         <div>
@@ -404,7 +401,7 @@
                                     <div class="epss-progress-container mr-2">
                                         <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
                                     </div>
-                                    <span class="text-sm font-medium ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
+                                    <span class="text-sm ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Exploit Prediction Scoring System - likelihood of exploitation</p>
                             </div>
@@ -508,7 +505,7 @@
                                 <div class="epss-table-container mr-2">
                                     <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
                                 </div>
-                                <span class="text-xs font-medium ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
+                                <span class="text-xs ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -686,7 +683,7 @@
                 }
 
                 // Create CSV content
-                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-BT Score', 'CVSS-BT Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'EPSS Score', 'CVSS-BT Vector', 'Published Date', 'Description'];
+                const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-BT Score', 'CVSS-BT Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'EPSS Score', 'CVSS-BT Vector', 'Published Date'];
                 const csvContent = [
                     headers.join(','),
                     ...currentResults.map(cve => 
@@ -700,8 +697,7 @@
                             cve['cvss-te_severity'],
                             cve.epss ? (cve.epss * 100).toFixed(2) + '%' : '0%',
                             `"${(cve['cvss-bt_vector'] || '').replace(/"/g, '""')}"`,
-                            cve.published_date,
-                            `"${(cve.description || '').replace(/"/g, '""')}"`
+                            cve.published_date
                         ].join(',')
                     )
                 ].join('\n');

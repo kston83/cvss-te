@@ -149,7 +149,7 @@ input:focus, select:focus {
   opacity: 1;
 }
 
-/* EPSS Score styling */
+/* EPSS Score styling - Updated for better readability */
 .epss-progress-container {
   width: 100%;
   background-color: #e5e7eb;
@@ -164,37 +164,59 @@ input:focus, select:focus {
   transition: width 0.6s ease;
 }
 
+/* Increase width and height for better visibility in tables */
 .epss-table-container {
-  width: 4rem;
+  width: 6rem; /* Increased from 4rem */
   background-color: #e5e7eb;
   border-radius: 9999px;
-  height: 6px;
+  height: 8px; /* Increased from 6px */
   overflow: hidden;
 }
 
+/* Color classes for progress bars (background-color only) */
 .epss-critical {
   background-color: #ef4444; /* red-500 */
-  color: #dc2626; /* red-600 */
 }
 
 .epss-high {
   background-color: #f97316; /* orange-500 */
-  color: #ea580c; /* orange-600 */
 }
 
 .epss-medium {
   background-color: #eab308; /* yellow-500 */
-  color: #ca8a04; /* yellow-600 */
 }
 
 .epss-low {
   background-color: #3b82f6; /* blue-500 */
-  color: #2563eb; /* blue-600 */
 }
 
 .epss-unknown {
   background-color: #9ca3af; /* gray-400 */
-  color: #6b7280; /* gray-500 */
+}
+
+/* New text color classes for better readability */
+.epss-text-critical {
+  color: #b91c1c; /* red-700 - darker for better contrast */
+  font-weight: 600;
+}
+
+.epss-text-high {
+  color: #c2410c; /* orange-700 - darker for better contrast */
+  font-weight: 600;
+}
+
+.epss-text-medium {
+  color: #a16207; /* yellow-700 - darker for better contrast */
+  font-weight: 600;
+}
+
+.epss-text-low {
+  color: #1d4ed8; /* blue-700 - darker for better contrast */
+  font-weight: 500;
+}
+
+.epss-text-unknown {
+  color: #4b5563; /* gray-600 */
 }
 
 /* Responsive adjustments */
