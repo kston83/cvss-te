@@ -328,11 +328,15 @@ def evaluate_exploit_quality(row):
     """
     Evaluate the quality of available exploits based on reliability, ease of use,
     and effectiveness.
+    
+    Now uses a weighted approach that emphasizes the highest quality exploit
+    to prevent dilution of high-quality exploits by lower-quality ones.
     """
+    # Initialize metrics
     quality_score = 0
-    reliability = 0
-    ease_of_use = 0
-    effectiveness = 0
+    reliability_scores = []
+    ease_of_use_scores = []
+    effectiveness_scores = []
     
     # Count how many sources have exploits
     exploit_sources = 0
@@ -341,28 +345,42 @@ def evaluate_exploit_quality(row):
     for source, metrics in SOURCE_QUALITY.items():
         if source in row and row[source]:
             exploit_sources += 1
-            reliability += metrics['reliability']
-            ease_of_use += metrics['ease']
-            effectiveness += metrics['effectiveness']
+            reliability_scores.append(metrics['reliability'])
+            ease_of_use_scores.append(metrics['ease'])
+            effectiveness_scores.append(metrics['effectiveness'])
             
     # Include Metasploit quality data if available
     if 'metasploit' in row and row['metasploit'] and 'metasploit_reliability' in row:
         # Replace the default metasploit reliability with the actual value from the module
-        reliability = reliability - SOURCE_QUALITY['metasploit']['reliability'] + row['metasploit_reliability']
+        metasploit_index = next((i for i, s in enumerate(reliability_scores) 
+                                if s == SOURCE_QUALITY['metasploit']['reliability']), None)
+        if metasploit_index is not None:
+            reliability_scores[metasploit_index] = row['metasploit_reliability']
     
-    # Normalize if we have exploit sources
+    # Calculate weighted quality metrics if we have exploit sources
     if exploit_sources > 0:
-        reliability /= exploit_sources
-        ease_of_use /= exploit_sources
-        effectiveness /= exploit_sources
+        # Find maximum values for each metric
+        max_reliability = max(reliability_scores) if reliability_scores else 0
+        max_ease = max(ease_of_use_scores) if ease_of_use_scores else 0
+        max_effectiveness = max(effectiveness_scores) if effectiveness_scores else 0
+        
+        # Calculate averages of remaining values (excluding max)
+        avg_reliability = (sum(reliability_scores) - max_reliability) / (len(reliability_scores) - 1) if len(reliability_scores) > 1 else max_reliability
+        avg_ease = (sum(ease_of_use_scores) - max_ease) / (len(ease_of_use_scores) - 1) if len(ease_of_use_scores) > 1 else max_ease
+        avg_effectiveness = (sum(effectiveness_scores) - max_effectiveness) / (len(effectiveness_scores) - 1) if len(effectiveness_scores) > 1 else max_effectiveness
+        
+        # Apply weighted approach: 70% weight to best score, 30% to average of remaining
+        weighted_reliability = (0.7 * max_reliability) + (0.3 * avg_reliability)
+        weighted_ease = (0.7 * max_ease) + (0.3 * avg_ease)
+        weighted_effectiveness = (0.7 * max_effectiveness) + (0.3 * avg_effectiveness)
         
         # Calculate overall quality score (weighted average)
-        quality_score = (reliability * 0.4) + (ease_of_use * 0.3) + (effectiveness * 0.3)
+        quality_score = (weighted_reliability * 0.4) + (weighted_ease * 0.3) + (weighted_effectiveness * 0.3)
     
     return {
-        'reliability': round(reliability, 2),
-        'ease_of_use': round(ease_of_use, 2),
-        'effectiveness': round(effectiveness, 2),
+        'reliability': round(max(reliability_scores) if reliability_scores else 0, 2),
+        'ease_of_use': round(max(ease_of_use_scores) if ease_of_use_scores else 0, 2),
+        'effectiveness': round(max(effectiveness_scores) if effectiveness_scores else 0, 2),
         'quality_score': round(quality_score, 2),
         'exploit_sources': exploit_sources
     }
@@ -509,10 +527,11 @@ def compute_cvss(row):
         logger.warning(f"General error computing CVSS for {row.get('cve', 'unknown')}: {e}")
         return 'UNKNOWN', 'UNKNOWN'
 
-
 def calculate_cvss_te_score(row):
     """
     Calculate CVSS-TE score incorporating threat intelligence factors
+    with refined handling of exploit quality, unexploited vulnerabilities,
+    and more granular exploit source counting.
     """
     # Start with the CVSS-BT score
     try:
@@ -528,38 +547,85 @@ def calculate_cvss_te_score(row):
     exploit_sources = row.get('exploit_sources', 0)
     
     # Calculate a quality multiplier (0.8-1.2 range)
-    # Higher quality exploits increase the effective risk
-    quality_multiplier = 1.0
     if exploit_sources > 0:
         # Scale from 0.8 (poor quality) to 1.2 (excellent quality)
         quality_multiplier = 0.8 + (quality_score * 0.4)
+    else:
+        # Handle unexploited vulnerabilities
+        epss = row.get('epss', 0)
+        if epss is not None and not pd.isna(epss) and epss < EPSS_THRESHOLD:
+            # Slight penalty for vulnerabilities with no exploits and low EPSS
+            quality_multiplier = 0.95
+        else:
+            # Default for unexploited but high EPSS
+            quality_multiplier = 1.0
     
     # Calculate a threat intelligence factor (0-2 points)
     threat_intel_factor = 0.0
     
     # KEV presence - prioritize CISA KEV, only use VulnCheck if not in CISA
+    kev_boost = 0.0
     if row.get('cisa_kev', False):
-        threat_intel_factor += 1.0
+        kev_boost = 1.0
     elif row.get('vulncheck_kev', False):
-        threat_intel_factor += 0.8
+        kev_boost = 0.8
     
-    # High EPSS adds moderate weight
+    # EPSS boost with anti-stacking logic when KEV is present
+    epss_boost = 0.0
     epss = row.get('epss', 0)
     if epss is not None and not pd.isna(epss):
         if epss >= 0.5:  # Higher threshold for TE
-            threat_intel_factor += 0.5
+            epss_boost = 0.5
         elif epss >= EPSS_THRESHOLD:
-            threat_intel_factor += 0.25
+            epss_boost = 0.25
     
-    # Multiple exploit sources indicate broader threat landscape
-    if exploit_sources >= 3:
-        threat_intel_factor += 0.5
-    elif exploit_sources == 2:
-        threat_intel_factor += 0.25
+    # Avoid over-stacking EPSS and KEV boosts
+    if kev_boost > 0 and epss_boost > 0:
+        # Use the higher of the two boosts
+        threat_intel_factor += max(kev_boost, epss_boost)
+    else:
+        # Add both if only one is present
+        threat_intel_factor += kev_boost + epss_boost
+    
+    # Granular exploit source counting
+    exploit_source_boost = 0.0
+    if exploit_sources == 2:
+        exploit_source_boost = 0.25
+    elif exploit_sources in [3, 4]:
+        exploit_source_boost = 0.5
+    elif exploit_sources >= 5:
+        exploit_source_boost = 0.75
+    
+    threat_intel_factor += exploit_source_boost
+    
+    # Time-based decay factor for older vulnerabilities
+    time_decay = 0.0
+    try:
+        # Only apply if published_date is available
+        published_date = row.get('published_date')
+        if published_date and not pd.isna(published_date):
+            from datetime import datetime
+            
+            # Parse date string to datetime
+            if isinstance(published_date, str):
+                pub_date = datetime.strptime(published_date, '%Y-%m-%dT%H:%M:%S.%f')
+            else:
+                pub_date = published_date
+                
+            # Calculate years since publication
+            current_time = datetime.now()
+            years_since_pub = (current_time - pub_date).days / 365.25
+            
+            # Apply decay for older vulnerabilities with no exploitation evidence
+            if years_since_pub > 5 and exploit_sources == 0 and not row.get('cisa_kev', False) and not row.get('vulncheck_kev', False):
+                time_decay = min(0.2, (years_since_pub - 5) * 0.04)  # Max 0.2 reduction for very old vulnerabilities
+    except (ValueError, TypeError, AttributeError) as e:
+        # Skip time decay if there's any issue with date parsing
+        logging.debug(f"Could not apply time decay for {row.get('cve', 'unknown')}: {e}")
     
     # Calculate final CVSS-TE score
-    # Formula: Min(10, Base_Temporal_Score * Quality_Multiplier + Threat_Intel_Factor)
-    te_score = min(10.0, base_score * quality_multiplier + threat_intel_factor)
+    # Formula: Min(10, Base_Temporal_Score * Quality_Multiplier + Threat_Intel_Factor - Time_Decay)
+    te_score = min(10.0, (base_score * quality_multiplier) + threat_intel_factor - time_decay)
     
     # Round to one decimal place
     return round(te_score, 1)
