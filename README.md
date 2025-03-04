@@ -72,7 +72,13 @@ Each exploit source is evaluated based on three key metrics:
 
 For Metasploit exploits, we further refine the reliability rating by incorporating the actual reliability and rank information from the module metadata when available.
 
-The overall quality score is calculated as a weighted average:
+The overall quality score is calculated using a weighted approach:
+- 70% weight is given to the highest-quality exploit
+- 30% weight is assigned to the average of the remaining exploit sources
+
+This prevents the dilution of high-quality weaponized exploits by lower-quality proof-of-concept exploits.
+
+The final weighting for the three quality dimensions is:
 - Reliability (40% weight)
 - Ease of Use (30% weight)
 - Effectiveness (30% weight)
@@ -81,25 +87,32 @@ The overall quality score is calculated as a weighted average:
 
 The CVSS-TE score is calculated using the following formula:
 
-```
-CVSS-TE = min(10, CVSS-BT_Score * Quality_Multiplier + Threat_Intel_Factor)
-```
+`CVSS-TE = min(10, CVSS-BT_Score * Quality_Multiplier + Threat_Intel_Factor - Time_Decay)`
 
 Where:
 
 **Quality Multiplier**: Ranges from 0.8-1.2 based on exploit quality
-- For poor quality exploits: closer to 0.8 (reducing the base severity)
-- For high quality exploits: up to 1.2 (increasing the base severity)
-- Formula: 0.8 + (quality_score * 0.4)
-- If no exploits exist: defaults to 1.0 (neutral impact)
+- For exploited vulnerabilities: 0.8 + (quality_score * 0.4)
+- For unexploited vulnerabilities with EPSS < 0.36: 0.95 (slight penalty for lack of exploitation evidence)
+- For unexploited vulnerabilities with EPSS ≥ 0.36: 1.0
+- Range: Poor quality exploits closer to 0.8 (reducing the base severity), high quality exploits up to 1.2 (increasing the base severity)
 
 **Threat Intel Factor**: Adds 0-2 points based on additional threat intelligence
-- CISA KEV or VulnCheck KEV presence: +1.0
+- CISA KEV presence: +1.0
+- VulnCheck KEV presence (if not in CISA KEV): +0.8
 - High EPSS score (≥ 0.5): +0.5
 - Moderate EPSS score (≥ 0.36): +0.25
-- Multiple exploit sources (≥ 3): +0.5
-- Two exploit sources: +0.25
-- No threat intelligence signals: +0.0 (no automatic increase)
+- If both KEV and high EPSS are present, uses the maximum value instead of adding them together
+- Exploit source count:
+  - 5 or more exploit sources: +0.75
+  - 3-4 exploit sources: +0.5
+  - 2 exploit sources: +0.25
+  - 0-1 exploit sources: +0.0
+
+**Time Decay**: Reduces score for older, unexploited vulnerabilities
+- For vulnerabilities >5 years old with no exploits: min(0.2, (years_since_pub - 5) * 0.04)
+- Maximum reduction of 0.2 points for very old vulnerabilities
+- No reduction for vulnerabilities less than 5 years old
 
 ### CVSS-TE Severity Levels
 
@@ -122,9 +135,9 @@ When a vulnerability has no data from any external threat intelligence sources:
 - For CVSS 4.0, an E:U value applies a similar reduction
 
 **For CVSS-TE**:
-- The Quality Multiplier defaults to 1.0 (neutral, as there are no exploits to evaluate)
+- The Quality Multiplier defaults to 0.95 for low EPSS or 1.0 for high EPSS (as there are no exploits to evaluate)
 - The Threat Intel Factor is 0.0 (no intelligence signals to consider)
-- The resulting CVSS-TE score equals the CVSS-BT score: `CVSS-TE = CVSS-BT * 1.0 + 0.0 = CVSS-BT`
+- For older vulnerabilities, a time decay factor may be applied
 
 ## Practical Application
 
@@ -171,4 +184,3 @@ Compatible with:
 ## Acknowledgements
 
 This product uses VulnCheck KEV and EPSS scores but is not endorsed or certified by the EPSS SIG or VulnCheck.
-

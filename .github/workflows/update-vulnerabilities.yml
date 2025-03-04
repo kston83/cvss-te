@@ -43,7 +43,7 @@ jobs:
         
         echo "TAG=$TAG" >> $GITHUB_ENV
 
-        git add cvss-te.csv last_run.txt
+        git add cvss-te.csv /last_run.txt
         git commit -m "Updated CVSS-TE data $(date +%Y-%m-%d)" -a || exit 0
         git push origin HEAD:main
         
