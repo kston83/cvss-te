@@ -1,7 +1,7 @@
 name: Update Vulnerability Data
 on:
   schedule:
-    - cron: '0 12 * * *'  # Run at 12:00 UTC daily
+    - cron: '0 8,20 * * *'  # Run at 12:00 UTC daily
   workflow_dispatch:
 
 jobs:
