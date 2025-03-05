@@ -25,7 +25,7 @@ except ImportError:
     sys.exit(1)
 
 # Constants
-EPSS_CSV = f'https://epss.cyentia.com/epss_scores-{date.today()}.csv.gz'
+EPSS_CSV = f'https://epss.cyentia.com/epss_scores-current.csv.gz'
 EPSS_BACKUP = './data/epss/epss_scores.csv'  # Backup location
 TIMESTAMP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'last_run.txt')
 

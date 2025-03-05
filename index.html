@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CVSS-Threat Enhanced (CVSS-TE) Vulnerability Lookup</title>
+    
+    <!-- Google Analytics GA4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-27RZTCLPTE"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-27RZTCLPTE', { 'anonymize_ip': true });
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <link rel="stylesheet" href="styles.css">
@@ -217,6 +227,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Privacy Notice -->
+        <div class="text-center mt-8 mb-4">
+            <p class="text-xs text-gray-500">This site uses analytics to improve the tool. No personally identifiable information is collected.</p>
+        </div>
     </main>
 
     <footer class="bg-slate-800 text-white py-6 mt-12">
@@ -253,6 +268,58 @@
 
             let csvData = null;
             let currentResults = [];
+
+            // Analytics tracking functions
+            function trackSearch(searchTerm, resultsCount) {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'search', {
+                        'search_term': searchTerm,
+                        'results_count': resultsCount
+                    });
+                }
+            }
+            
+            function trackExport(count) {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'export', {
+                        'items_count': count
+                    });
+                }
+            }
+            
+            function trackCveView(cveId, severity) {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'view_cve_details', {
+                        'cve_id': cveId,
+                        'severity': severity
+                    });
+                }
+            }
+            
+            function trackFilterChange(filterType, value) {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'filter_change', {
+                        'filter_type': filterType,
+                        'filter_value': value
+                    });
+                }
+            }
+            
+            function trackSortChange(value) {
+                if (typeof gtag === 'function') {
+                    gtag('event', 'sort_change', {
+                        'sort_value': value
+                    });
+                }
+            }
+
+            // Helper function for EPSS display
+            function formatEpssPercentage(epssValue) {
+                if (epssValue === null || epssValue === undefined) return '0.00%';
+                const value = parseFloat(epssValue);
+                if (isNaN(value)) return '0.00%';
+                return (value * 100).toFixed(2) + '%';
+            }
 
             // Fetch the last run time
             fetch('code/last_run.txt')
@@ -417,7 +484,7 @@
                                 <div class="epss-progress-container mr-2 flex-grow">
                                     <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
                                 </div>
-                                <span class="text-sm ${getEpssTextColor(cve.epss)} ml-2 w-16 text-right">${(cve.epss * 100).toFixed(2)}%</span>
+                                <span class="text-sm ${getEpssTextColor(cve.epss)} ml-2 w-16 text-right">${formatEpssPercentage(cve.epss)}</span>
                             </div>
                             <p class="text-xs text-gray-500">Exploit Prediction Scoring System - likelihood of exploitation</p>
                         </div>
@@ -472,10 +539,13 @@
                 modalContent.innerHTML = content;
                 modal.classList.remove('hidden');
                 
+                // Track modal view in analytics
+                trackCveView(cve.cve, cve['cvss-te_severity']);
+                
                 // Prevent background scrolling
                 document.body.style.overflow = 'hidden';
             }
-            
+
             function closeDetailModal() {
                 modal.classList.add('hidden');
                 // Restore background scrolling
@@ -524,10 +594,10 @@
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center">
-                                <div class="epss-table-container mr-2">
+                                <div class="epss-table-container mr-2 flex-grow">
                                     <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
                                 </div>
-                                <span class="text-xs ${getEpssTextColor(cve.epss)}">${(cve.epss * 100).toFixed(2)}%</span>
+                                <span class="text-xs ${getEpssTextColor(cve.epss)}">${formatEpssPercentage(cve.epss)}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4">
@@ -622,6 +692,13 @@
                     // Fix any potential data issues
                     csvData = csvData.filter(row => row && row.cve && row.cve.startsWith('CVE-'));
                     
+                    // Track data loaded event
+                    if (typeof gtag === 'function') {
+                        gtag('event', 'data_loaded', {
+                            'cve_count': csvData.length
+                        });
+                    }
+                    
                     // Hide loading indicator
                     loadingIndicator.classList.add('hidden');
                     console.log(`Loaded ${csvData.length} CVE records successfully`);
@@ -693,6 +770,9 @@
                 // Apply current filters and sorting
                 const filteredAndSorted = filterAndSortResults(matchedCVEs);
                 
+                // Track search analytics
+                trackSearch(inputText, matchedCVEs.length);
+                
                 // Display matched CVEs
                 displayCVEResults(filteredAndSorted);
             });
@@ -724,6 +804,9 @@
                     )
                 ].join('\n');
 
+                // Track export analytics
+                trackExport(currentResults.length);
+
                 // Create and trigger download
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
@@ -738,6 +821,8 @@
 
             // Filter and sort event listeners
             severityFilter.addEventListener('change', function() {
+                trackFilterChange('severity', this.value);
+                
                 if (currentResults.length > 0) {
                     const filtered = filterAndSortResults(currentResults);
                     displayCVEResults(filtered);
@@ -745,6 +830,8 @@
             });
 
             sortBy.addEventListener('change', function() {
+                trackSortChange(this.value);
+                
                 if (currentResults.length > 0) {
                     const filtered = filterAndSortResults(currentResults);
                     displayCVEResults(filtered);
@@ -783,6 +870,10 @@
 
             showScoringInfoBtn.addEventListener('click', function() {
                 scoringInfoPanel.classList.remove('hidden');
+                // Track info panel view
+                if (typeof gtag === 'function') {
+                    gtag('event', 'view_info_panel');
+                }
                 // Smooth scroll to the panel
                 scoringInfoPanel.scrollIntoView({ behavior: 'smooth' });
             });
