@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CVSS-Threat Enhanced (CVSS-TE) Vulnerability Lookup</title>
     
+    <!-- Meta tags for SEO and social sharing -->
+    <meta name="description" content="CVSS-TE: A Threat-Enhanced Vulnerability Scoring System combining CVSS Base, Temporal metrics, and real-world threat intelligence for better vulnerability prioritization.">
+    <meta name="keywords" content="CVSS, vulnerability scoring, cybersecurity, threat intelligence, CVE lookup">
+    <meta property="og:title" content="CVSS-TE Vulnerability Lookup">
+    <meta property="og:description" content="Enhanced vulnerability scoring system combining CVSS with threat intelligence">
+    <meta property="og:url" content="https://your-domain.com">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
     <!-- Google Analytics GA4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-27RZTCLPTE"></script>
     <script>
@@ -85,6 +96,25 @@
                 >
                     Export Results
                 </button>
+            </div>
+        </section>
+
+        <!-- Quick Help Section -->
+        <section class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Quick Tips</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 class="font-medium text-gray-800 mb-2">Multiple CVEs</h4>
+                    <p class="text-sm text-gray-600">Enter multiple CVE IDs separated by commas (e.g., CVE-2021-44228, CVE-2023-23397)</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 class="font-medium text-gray-800 mb-2">Understanding Scores</h4>
+                    <p class="text-sm text-gray-600">Click "What do these scores mean?" to learn about CVSS Base, CVSS-BT, and CVSS-TE scoring</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h4 class="font-medium text-gray-800 mb-2">Export Results</h4>
+                    <p class="text-sm text-gray-600">Download your search results in CSV format for further analysis</p>
+                </div>
             </div>
         </section>
 
@@ -234,10 +264,38 @@
         </div>
     </main>
 
-    <footer class="bg-slate-800 text-white py-6 mt-12">
-        <div class="container mx-auto px-4 text-center">
-            <p class="mb-2">CVSS-TE: Threat-Enhanced Vulnerability Scoring System</p>
-            <p class="text-sm text-gray-400">Enhancing vulnerability prioritization with threat intelligence context</p>
+    <footer class="bg-slate-800 text-white py-8 mt-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">About CVSS-TE</h3>
+                    <p class="text-gray-400 text-sm">A Threat-Enhanced Vulnerability Scoring System that combines traditional CVSS metrics with real-world threat intelligence.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">Resources</h3>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="https://github.com/kston83/cvss-te" class="text-gray-400 hover:text-white transition-colors flex items-center">
+                                <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                                </svg>
+                                GitHub Repository
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://github.com/kston83/cvss-te/blob/main/whitepaper.md" class="text-gray-400 hover:text-white transition-colors flex items-center">
+                                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                Read the Whitepaper
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 pt-4 text-center">
+                <p class="text-sm text-gray-400">CVSS-TE: Enhancing vulnerability prioritization with threat intelligence context</p>
+            </div>
         </div>
     </footer>
 
@@ -366,6 +424,52 @@
                     year: 'numeric', 
                     month: 'short', 
                     day: 'numeric' 
+                });
+            }
+
+            // Recent searches functionality
+            function saveRecentSearch(cveList) {
+                const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+                recentSearches.unshift(cveList);
+                if (recentSearches.length > 5) recentSearches.pop();
+                localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+                displayRecentSearches();
+            }
+
+            function displayRecentSearches() {
+                const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+                if (recentSearches.length === 0) return;
+
+                const recentSearchesHtml = `
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600">Recent Searches:</p>
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            ${recentSearches.map(search => `
+                                <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-full transition-colors">
+                                    ${search}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                // Add after the search input
+                const searchInput = document.querySelector('#cve-input');
+                const existingRecentSearches = document.querySelector('.recent-searches');
+                if (existingRecentSearches) {
+                    existingRecentSearches.remove();
+                }
+                const recentSearchesDiv = document.createElement('div');
+                recentSearchesDiv.className = 'recent-searches';
+                recentSearchesDiv.innerHTML = recentSearchesHtml;
+                searchInput.insertAdjacentElement('afterend', recentSearchesDiv);
+
+                // Add click handlers to recent search buttons
+                recentSearchesDiv.querySelectorAll('button').forEach(button => {
+                    button.addEventListener('click', () => {
+                        cveInput.value = button.textContent.trim();
+                        searchBtn.click();
+                    });
                 });
             }
 
@@ -773,6 +877,9 @@
                 // Track search analytics
                 trackSearch(inputText, matchedCVEs.length);
                 
+                // Save recent search
+                saveRecentSearch(inputText);
+                
                 // Display matched CVEs
                 displayCVEResults(filteredAndSorted);
             });
@@ -882,13 +989,10 @@
                 scoringInfoPanel.classList.add('hidden');
             });
 
-            // Show info panel automatically on first search
+            // Remove the automatic display on first search
             let firstSearchDone = false;
             searchBtn.addEventListener('click', function() {
                 if (!firstSearchDone && currentResults.length > 0) {
-                    setTimeout(() => {
-                        scoringInfoPanel.classList.remove('hidden');
-                    }, 1000);
                     firstSearchDone = true;
                 }
             });
