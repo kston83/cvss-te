@@ -3,7 +3,7 @@
  * Fetches CISA KEV catalog and enriches CVE data with dateAdded
  */
 
-const KEV_LOCAL_PATH = 'data/kev/known_exploited_vulnerabilities.json'; // Local fallback
+const KEV_LOCAL_PATH = 'https://raw.githubusercontent.com/kston83/cvss-te/refs/heads/main/data/kev/known_exploited_vulnerabilities.json'; // Local fallback
 const KEV_REMOTE_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json'; // CISA live feed
 const KEV_CACHE_KEY = 'cisa_kev_cache';
 const KEV_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
