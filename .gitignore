@@ -1,7 +1,7 @@
 .venv
 .DS_Store
 .local
-*.json
+/code/.*json
 .zip
 code/__pycache__/
 /code/data/
