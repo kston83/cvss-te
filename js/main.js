@@ -3,711 +3,353 @@
  * Enhanced vulnerability scoring system
  */
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Elements
-    const cveInput = document.getElementById('cve-input');
-    const searchBtn = document.getElementById('search-btn');
-    const exportBtn = document.getElementById('export-btn');
-    const severityFilter = document.getElementById('severity-filter');
-    const sortBy = document.getElementById('sort-by');
-    const loadingIndicator = document.getElementById('loading');
-    const errorDiv = document.getElementById('error');
-    const resultsContainer = document.getElementById('results-container');
-    const resultsBody = document.getElementById('results-body');
-    const resultsCount = document.getElementById('results-count');
-    const statsBar = document.getElementById('stats-bar');
-    const totalResults = document.getElementById('total-results');
-    const criticalCount = document.getElementById('critical-count');
-    const highCount = document.getElementById('high-count');
-    const exploitCount = document.getElementById('exploit-count');
-    const modal = document.getElementById('cve-detail-modal');
-    const closeModal = document.getElementById('close-modal');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const modalTitle = document.getElementById('modal-title');
-    const modalContent = document.getElementById('modal-content');
-    const lastUpdateTime = document.getElementById('last-update-time');
+import { DataManager } from './modules/dataManager.js';
+import { SearchEngine } from './modules/searchEngine.js';
+import { Analytics } from './modules/analytics.js';
+import { UIRenderer } from './modules/uiRenderer.js';
+import { ExportManager } from './modules/exportManager.js';
+import * as Utils from './modules/utils.js';
 
-    let csvData = null;
-    let originalSearchResults = []; // Store unfiltered search results
-    let currentResults = []; // Store currently displayed results (after filter/sort)
+/**
+ * Main CVSS-TE Application Class
+ * Coordinates all modules and handles application logic
+ */
+class CVSSApp {
+    constructor() {
+        // Initialize DOM elements
+        this.elements = {
+            cveInput: document.getElementById('cve-input'),
+            searchBtn: document.getElementById('search-btn'),
+            exportBtn: document.getElementById('export-btn'),
+            severityFilter: document.getElementById('severity-filter'),
+            sortBy: document.getElementById('sort-by'),
+            loadingIndicator: document.getElementById('loading'),
+            errorDiv: document.getElementById('error'),
+            resultsContainer: document.getElementById('results-container'),
+            resultsBody: document.getElementById('results-body'),
+            resultsCount: document.getElementById('results-count'),
+            statsBar: document.getElementById('stats-bar'),
+            totalResults: document.getElementById('total-results'),
+            criticalCount: document.getElementById('critical-count'),
+            highCount: document.getElementById('high-count'),
+            exploitCount: document.getElementById('exploit-count'),
+            modal: document.getElementById('cve-detail-modal'),
+            closeModal: document.getElementById('close-modal'),
+            closeModalBtn: document.getElementById('close-modal-btn'),
+            modalTitle: document.getElementById('modal-title'),
+            modalContent: document.getElementById('modal-content'),
+            lastUpdateTime: document.getElementById('last-update-time')
+        };
 
-    // Analytics tracking functions
-    function trackSearch(searchTerm, resultsCount) {
-        if (typeof gtag === 'function') {
-            gtag('event', 'search', {
-                'search_term': searchTerm,
-                'results_count': resultsCount
-            });
-        }
-    }
-    
-    function trackExport(count) {
-        if (typeof gtag === 'function') {
-            gtag('event', 'export', {
-                'items_count': count
-            });
-        }
-    }
-    
-    function trackCveView(cveId, severity) {
-        if (typeof gtag === 'function') {
-            gtag('event', 'view_cve_details', {
-                'cve_id': cveId,
-                'severity': severity
-            });
-        }
-    }
-    
-    function trackFilterChange(filterType, value) {
-        if (typeof gtag === 'function') {
-            gtag('event', 'filter_change', {
-                'filter_type': filterType,
-                'filter_value': value
-            });
-        }
-    }
-    
-    function trackSortChange(value) {
-        if (typeof gtag === 'function') {
-            gtag('event', 'sort_change', {
-                'sort_value': value
-            });
-        }
+        // Initialize modules
+        this.dataManager = new DataManager(CONFIG.CSV_PATH);
+        this.searchEngine = new SearchEngine(this.dataManager);
+        this.analytics = new Analytics();
+        this.uiRenderer = new UIRenderer(this.elements);
+        this.exportManager = new ExportManager();
+
+        // State management
+        this.originalSearchResults = [];
+        this.currentResults = [];
+        this.firstSearchDone = false;
+
+        // Initialize
+        this.init();
     }
 
-    // Helper function for EPSS display
-    function formatEpssPercentage(epssValue) {
-        if (epssValue === null || epssValue === undefined) return '0.00%';
-        const value = parseFloat(epssValue);
-        if (isNaN(value)) return '0.00%';
-        return (value * 100).toFixed(2) + '%';
+    /**
+     * Initialize the application
+     */
+    async init() {
+        // Set up UI renderer callback
+        this.uiRenderer.setOnViewDetails((cve) => this.showCVEDetails(cve));
+
+        // Load data
+        await this.loadInitialData();
+
+        // Fetch last update time
+        this.fetchLastUpdateTime();
+
+        // Set up event listeners
+        this.setupEventListeners();
+
+        // Display recent searches
+        this.displayRecentSearches();
     }
 
-    // Fetch the last run time
-    fetch(CONFIG.LAST_RUN_PATH)
-        .then(response => response.text())
-        .then(text => {
-            const lastRunDate = new Date(text.trim());
-            
-            // Format for UTC display with more explicit options
-            const utcOptions = { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                timeZone: 'UTC' 
-            };
-            const utcTime = lastRunDate.toLocaleString('en-US', utcOptions) + ' UTC';
-            
-            // Format for local display with explicit timezone
-            const localOptions = { 
-                year: 'numeric', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                timeZoneName: 'short'
-            };
-            const localTime = lastRunDate.toLocaleString('en-US', localOptions);
-            
-            lastUpdateTime.textContent = `Last Updated: ${utcTime} / ${localTime}`;
-        })
-        .catch(error => {
-            console.error('Error fetching last run time:', error);
-            lastUpdateTime.textContent = 'Last Updated: Unknown';
-        });
+    /**
+     * Load initial CSV data
+     */
+    async loadInitialData() {
+        this.uiRenderer.showLoading();
 
-    // Helper Functions
-    function formatDate(dateString) {
-        if (!dateString) return 'N/A';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
-        });
-    }
-
-    // Recent searches functionality
-    function saveRecentSearch(cveList) {
-        const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-        recentSearches.unshift(cveList);
-        if (recentSearches.length > CONFIG.MAX_RECENT_SEARCHES) recentSearches.pop();
-        localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
-        displayRecentSearches();
-    }
-
-    function displayRecentSearches() {
-        const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-        if (recentSearches.length === 0) return;
-
-        const recentSearchesHtml = `
-            <div class="mt-4">
-                <p class="text-sm text-gray-600">Recent Searches:</p>
-                <div class="flex flex-wrap gap-2 mt-1">
-                    ${recentSearches.map(search => `
-                        <button class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-full transition-colors">
-                            ${search}
-                        </button>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        // Add after the search input
-        const searchInput = document.querySelector('#cve-input');
-        const existingRecentSearches = document.querySelector('.recent-searches');
-        if (existingRecentSearches) {
-            existingRecentSearches.remove();
-        }
-        const recentSearchesDiv = document.createElement('div');
-        recentSearchesDiv.className = 'recent-searches';
-        recentSearchesDiv.innerHTML = recentSearchesHtml;
-        searchInput.insertAdjacentElement('afterend', recentSearchesDiv);
-
-        // Add click handlers to recent search buttons
-        recentSearchesDiv.querySelectorAll('button').forEach(button => {
-            button.addEventListener('click', () => {
-                cveInput.value = button.textContent.trim();
-                searchBtn.click();
-            });
-        });
-    }
-
-    function getSeverityColor(score) {
-        if (!score) return 'bg-gray-400 text-white';
-        const numScore = parseFloat(score);
-        if (numScore >= CONFIG.CVSS_THRESHOLDS.CRITICAL) return 'bg-red-600 text-white';
-        if (numScore >= CONFIG.CVSS_THRESHOLDS.HIGH) return 'bg-orange-600 text-white';
-        if (numScore >= CONFIG.CVSS_THRESHOLDS.MEDIUM) return 'bg-yellow-500 text-black';
-        return 'bg-green-600 text-white';
-    }
-    
-    // Function for progress bar coloring
-    function getEpssColor(epssScore) {
-        if (!epssScore && epssScore !== 0) return 'epss-unknown';
-        const score = parseFloat(epssScore);
-        if (score >= CONFIG.EPSS_THRESHOLDS.CRITICAL) return 'epss-critical'; // Critical (50%+)
-        if (score >= CONFIG.EPSS_THRESHOLDS.HIGH) return 'epss-high';    // High (36%+) - EPSS threshold from README
-        if (score >= CONFIG.EPSS_THRESHOLDS.MEDIUM) return 'epss-medium';   // Medium (10-36%)
-        return 'epss-low';                        // Low (<10%)
-    }
-    
-    // Function for text coloring (separate from progress bar)
-    function getEpssTextColor(epssScore) {
-        if (!epssScore && epssScore !== 0) return 'epss-text-unknown';
-        const score = parseFloat(epssScore);
-        if (score >= CONFIG.EPSS_THRESHOLDS.CRITICAL) return 'epss-text-critical';   // Critical
-        if (score >= CONFIG.EPSS_THRESHOLDS.HIGH) return 'epss-text-high';      // High
-        if (score >= CONFIG.EPSS_THRESHOLDS.MEDIUM) return 'epss-text-medium';     // Medium
-        return 'epss-text-low';                          // Low
-    }
-
-    function hasExploits(cve) {
-        // Check if any of these are truthy (1 instead of true)
-        return cve.exploitdb || cve.metasploit || cve.nuclei || cve.poc_github;
-    }
-
-    function createThreatIndicatorBadges(cve) {
-        const indicators = [
-            { key: 'cisa_kev', label: 'CISA KEV', color: 'bg-red-500' },
-            { key: 'vulncheck_kev', label: 'VulnCheck KEV', color: 'bg-orange-500' },
-            { key: 'exploitdb', label: 'Exploit DB', color: 'bg-yellow-500' },
-            { key: 'metasploit', label: 'Metasploit', color: 'bg-green-600' },
-            { key: 'nuclei', label: 'Nuclei', color: 'bg-blue-600' },
-            { key: 'poc_github', label: 'GitHub PoC', color: 'bg-purple-600' }
-        ];
-
-        const badges = indicators
-            // Filter based on truthy values (1) rather than strictly === true
-            .filter(indicator => cve[indicator.key])
-            .map(indicator => 
-                `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${indicator.color} text-white mr-1 mb-1">
-                    ${indicator.label}
-                </span>`
-            )
-            .join('');
-        
-        return badges || '<span class="text-gray-500 text-sm italic">No Active Indicators</span>';
-    }
-
-    function showCVEDetails(cve) {
-        modalTitle.textContent = `${cve.cve} Details`;
-        
-        const content = `
-            <!-- Single-column header for basic info -->
-            <div class="mb-6">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 class="font-bold mb-3 text-lg text-gray-800">Vulnerability Details</h4>
-                    <div class="grid grid-cols-3 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">Published:</p>
-                            <p class="font-medium">${formatDate(cve.published_date)}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">Last Modified:</p>
-                            <p class="font-medium">${formatDate(cve.last_modified_date)}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600 mb-1">Assigner:</p>
-                            <p class="font-medium">${cve.assigner || 'N/A'}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- CVSS Scores row - 3 score boxes side by side -->
-            <div class="mb-6">
-                <h4 class="font-bold mb-3 text-lg text-gray-800">Scoring</h4>
-                <div class="grid grid-cols-3 gap-4">
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <p class="font-medium text-gray-700 mb-2">CVSS Base</p>
-                        <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve.base_score)}">
-                            ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
-                        </span>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <p class="font-medium text-gray-700 mb-2">CVSS-BT (Temporal)</p>
-                        <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-bt_score'])}">
-                            ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
-                        </span>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <p class="font-medium text-gray-700 mb-2">CVSS-TE (Enhanced)</p>
-                        <span class="inline-flex items-center px-3 py-1 rounded-lg ${getSeverityColor(cve['cvss-te_score'])}">
-                            ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
-                        </span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- EPSS Score -->
-            <div class="mb-6">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 class="font-medium text-gray-700 mb-2">EPSS Score</h4>
-                    <div class="flex items-center mb-2">
-                        <div class="epss-progress-container mr-2 flex-grow">
-                            <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
-                        </div>
-                        <span class="text-sm ${getEpssTextColor(cve.epss)} ml-2 w-16 text-right">${formatEpssPercentage(cve.epss)}</span>
-                    </div>
-                    <p class="text-xs text-gray-500">Exploit Prediction Scoring System - likelihood of exploitation</p>
-                </div>
-            </div>
-
-            <!-- Two-column layout for vectors and threat intel -->
-            <div class="grid grid-cols-2 gap-6">
-                <div>
-                    <h4 class="font-bold mb-3 text-lg text-gray-800">CVSS Vectors</h4>
-                    <div class="mb-3">
-                        <p class="text-sm text-gray-600 mb-1">Base Vector:</p>
-                        <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve.base_vector || "N/A"}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-600 mb-1">CVSS-BT Vector:</p>
-                        <p class="bg-gray-50 p-2 rounded-lg text-sm font-mono border border-gray-200">${cve['cvss-bt_vector'] || "N/A"}</p>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="font-bold mb-3 text-lg text-gray-800">Threat Intelligence</h4>
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-4">
-                        <p class="font-medium text-gray-700 mb-2">Indicators:</p>
-                        <div>${createThreatIndicatorBadges(cve)}</div>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <h4 class="font-medium text-gray-700 mb-2">Exploit Quality</h4>
-                        <div class="grid grid-cols-2 gap-2 text-sm">
-                            <p><span class="font-medium">Quality Score:</span> ${(cve.quality_score * 100).toFixed(1)}%</p>
-                            <p><span class="font-medium">Exploit Sources:</span> ${cve.exploit_sources}</p>
-                            <p><span class="font-medium">Reliability:</span> ${(cve.reliability * 100).toFixed(0)}%</p>
-                            <p><span class="font-medium">Ease of Use:</span> ${(cve.ease_of_use * 100).toFixed(0)}%</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- References -->
-            <div class="mt-6">
-                <h4 class="font-bold mb-3 text-lg text-gray-800">References</h4>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <a href="https://nvd.nist.gov/vuln/detail/${cve.cve}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline block mb-2">
-                        NIST NVD Database: ${cve.cve}
-                    </a>
-                    <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=${cve.cve}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline block">
-                        Mitre CVE: ${cve.cve}
-                    </a>
-                </div>
-            </div>
-        `;
-        
-        modalContent.innerHTML = content;
-        modal.classList.remove('hidden');
-        
-        // Track modal view in analytics
-        trackCveView(cve.cve, cve['cvss-te_severity']);
-        
-        // Prevent background scrolling
-        document.body.style.overflow = 'hidden';
-    }
-
-    function closeDetailModal() {
-        modal.classList.add('hidden');
-        // Restore background scrolling
-        document.body.style.overflow = '';
-    }
-
-    function displayCVEResults(results, isOriginalSearch = false) {
-        resultsBody.innerHTML = '';
-        
-        // Store original search results if this is a new search
-        if (isOriginalSearch) {
-            originalSearchResults = results;
-        }
-        
-        currentResults = results;
-        
-        // Update results count
-        resultsCount.textContent = `Showing ${results.length} result${results.length !== 1 ? 's' : ''}`;
-        
-        // Update stats
-        totalResults.textContent = results.length;
-        criticalCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'CRITICAL').length;
-        highCount.textContent = results.filter(cve => cve['cvss-te_severity'] === 'HIGH').length;
-        document.getElementById('high-epss-count').textContent = results.filter(cve => cve.epss && cve.epss >= CONFIG.EPSS_THRESHOLDS.HIGH).length;
-        exploitCount.textContent = results.filter(cve => hasExploits(cve)).length;
-        
-        // Show the stats bar
-        statsBar.classList.remove('hidden');
-
-        results.forEach(cve => {
-            const threatIndicatorBadges = createThreatIndicatorBadges(cve);
-            
-            const row = document.createElement('tr');
-            row.className = 'hover:bg-gray-50 transition-colors';
-            
-            row.innerHTML = `
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${cve.cve}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve.base_score)}">
-                        ${cve.base_score || 'N/A'} (${cve.base_severity || 'N/A'})
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve['cvss-bt_score'])}">
-                        ${cve['cvss-bt_score'] || 'N/A'} (${cve['cvss-bt_severity'] || 'N/A'})
-                    </span>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-2.5 py-1 rounded-lg text-sm font-medium ${getSeverityColor(cve['cvss-te_score'])}">
-                        ${cve['cvss-te_score'] || 'N/A'} (${cve['cvss-te_severity'] || 'N/A'})
-                    </span>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="flex items-center">
-                        <div class="epss-table-container mr-2 flex-grow">
-                            <div class="epss-progress-bar ${getEpssColor(cve.epss)}" style="width: ${Math.min(cve.epss * 100, 100)}%"></div>
-                        </div>
-                        <span class="text-xs ${getEpssTextColor(cve.epss)}">${formatEpssPercentage(cve.epss)}</span>
-                    </div>
-                </td>
-                <td class="px-6 py-4">
-                    ${threatIndicatorBadges}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatDate(cve.published_date)}</td>
-                <td class="px-6 py-4 text-center">
-                    <button class="view-details bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1 px-3 rounded-lg transition-colors">
-                        Details
-                    </button>
-                </td>
-            `;
-            
-            const viewButton = row.querySelector('.view-details');
-            viewButton.addEventListener('click', () => showCVEDetails(cve));
-            
-            resultsBody.appendChild(row);
-        });
-
-        resultsContainer.classList.remove('hidden');
-    }
-
-    function filterAndSortResults(results) {
-        const severityFilterValue = severityFilter.value;
-        const sortByValue = sortBy.value;
-
-        let filteredResults = [...results];
-
-        // Apply severity filter
-        if (severityFilterValue) {
-            filteredResults = filteredResults.filter(cve => 
-                cve['cvss-te_severity'] === severityFilterValue
-            );
-        }
-
-        // Apply sorting
-        switch(sortByValue) {
-            case 'published_date_desc':
-                filteredResults.sort((a, b) => new Date(b.published_date || 0) - new Date(a.published_date || 0));
-                break;
-            case 'published_date_asc':
-                filteredResults.sort((a, b) => new Date(a.published_date || 0) - new Date(b.published_date || 0));
-                break;
-            case 'base_score_desc':
-                filteredResults.sort((a, b) => (parseFloat(b.base_score) || 0) - (parseFloat(a.base_score) || 0));
-                break;
-            case 'base_score_asc':
-                filteredResults.sort((a, b) => (parseFloat(a.base_score) || 0) - (parseFloat(b.base_score) || 0));
-                break;
-            case 'cvss-bt_score_desc':
-                filteredResults.sort((a, b) => (parseFloat(b['cvss-bt_score']) || 0) - (parseFloat(a['cvss-bt_score']) || 0));
-                break;
-            case 'cvss-bt_score_asc':
-                filteredResults.sort((a, b) => (parseFloat(a['cvss-bt_score']) || 0) - (parseFloat(b['cvss-bt_score']) || 0));
-                break;
-            case 'cvss-te_score_desc':
-                filteredResults.sort((a, b) => (parseFloat(b['cvss-te_score']) || 0) - (parseFloat(a['cvss-te_score']) || 0));
-                break;
-            case 'epss_desc':
-                filteredResults.sort((a, b) => (parseFloat(b.epss) || 0) - (parseFloat(a.epss) || 0));
-                break;
-        }
-
-        return filteredResults;
-    }
-
-    // Load data immediately
-    loadingIndicator.classList.remove('hidden');
-    
-    // Fetch the CSV file (from the root directory for GitHub Pages)
-    fetch(CONFIG.CSV_PATH)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
-            return response.text();
-        })
-        .then(csvText => {
-            // Parse CSV
-            const parseResult = Papa.parse(csvText, {
-                header: true,
-                dynamicTyping: true,
-                skipEmptyLines: true
-            });
-            
-            if (parseResult.errors && parseResult.errors.length > 0) {
-                console.warn('CSV parsing warnings:', parseResult.errors);
-            }
-            
-            csvData = parseResult.data;
-
-            // Fix any potential data issues
-            csvData = csvData.filter(row => row && row.cve && row.cve.startsWith('CVE-'));
-            
-            // Track data loaded event
-            if (typeof gtag === 'function') {
-                gtag('event', 'data_loaded', {
-                    'cve_count': csvData.length
-                });
-            }
-            
-            // Hide loading indicator
-            loadingIndicator.classList.add('hidden');
-            console.log(`Loaded ${csvData.length} CVE records successfully`);
-        })
-        .catch(error => {
+        try {
+            await this.dataManager.loadData();
+            this.uiRenderer.hideLoading();
+        } catch (error) {
             console.error('Error loading CSV:', error);
-            loadingIndicator.classList.add('hidden');
-            errorDiv.classList.remove('hidden');
-            document.getElementById('error-message').textContent = 'Error loading CVE data: ' + error.message;
+            this.uiRenderer.hideLoading();
+            this.uiRenderer.showError('Error loading CVE data: ' + error.message);
+        }
+    }
+
+    /**
+     * Fetch and display last update time
+     */
+    fetchLastUpdateTime() {
+        fetch(CONFIG.LAST_RUN_PATH)
+            .then(response => response.text())
+            .then(text => {
+                const lastRunDate = new Date(text.trim());
+                
+                // Format for UTC display
+                const utcOptions = { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZone: 'UTC' 
+                };
+                const utcTime = lastRunDate.toLocaleString('en-US', utcOptions) + ' UTC';
+                
+                // Format for local display
+                const localOptions = { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    timeZoneName: 'short'
+                };
+                const localTime = lastRunDate.toLocaleString('en-US', localOptions);
+                
+                this.elements.lastUpdateTime.textContent = `Last Updated: ${utcTime} / ${localTime}`;
+            })
+            .catch(error => {
+                console.error('Error fetching last run time:', error);
+                this.elements.lastUpdateTime.textContent = 'Last Updated: Unknown';
+            });
+    }
+
+    /**
+     * Set up all event listeners
+     */
+    setupEventListeners() {
+        // Search button
+        this.elements.searchBtn.addEventListener('click', () => this.handleSearch());
+
+        // Enter key in search box
+        this.elements.cveInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                this.handleSearch();
+            }
         });
 
-    // Event Listeners
-    // Search button event listener
-    searchBtn.addEventListener('click', function() {
-        // Reset previous results and errors
-        errorDiv.classList.add('hidden');
-        resultsContainer.classList.add('hidden');
+        // Export button
+        this.elements.exportBtn.addEventListener('click', () => this.handleExport());
+
+        // Filter change
+        this.elements.severityFilter.addEventListener('change', () => this.handleFilterChange());
+
+        // Sort change
+        this.elements.sortBy.addEventListener('change', () => this.handleSortChange());
+
+        // Modal close events
+        this.elements.closeModal.addEventListener('click', () => this.closeModal());
+        this.elements.closeModalBtn.addEventListener('click', () => this.closeModal());
         
-        // Get and process CVE input
-        const inputText = cveInput.value.trim();
+        // Close modal when clicking outside
+        this.elements.modal.addEventListener('click', (event) => {
+            if (event.target === this.elements.modal) {
+                this.closeModal();
+            }
+        });
+        
+        // Close modal on escape key
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && !this.elements.modal.classList.contains('hidden')) {
+                this.closeModal();
+            }
+        });
+
+        // Scoring info panel
+        const scoringInfoPanel = document.getElementById('scoring-info-panel');
+        const showScoringInfoBtn = document.getElementById('show-scoring-info');
+        const closeInfoPanelBtn = document.getElementById('close-info-panel');
+
+        if (showScoringInfoBtn) {
+            showScoringInfoBtn.addEventListener('click', () => {
+                scoringInfoPanel.classList.remove('hidden');
+                this.analytics.trackInfoPanelView();
+                scoringInfoPanel.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+
+        if (closeInfoPanelBtn) {
+            closeInfoPanelBtn.addEventListener('click', () => {
+                scoringInfoPanel.classList.add('hidden');
+            });
+        }
+    }
+
+    /**
+     * Handle search action
+     */
+    handleSearch() {
+        // Reset previous results and errors
+        this.uiRenderer.hideError();
+        this.uiRenderer.hideResults();
+        
+        // Get and validate input
+        const inputText = this.elements.cveInput.value.trim();
         
         if (!inputText) {
-            errorDiv.classList.remove('hidden');
-            document.getElementById('error-message').textContent = 'Please enter valid CVE(s)';
+            this.uiRenderer.showError('Please enter valid CVE(s)');
             return;
         }
         
-        const inputCVEs = inputText.split(',')
-            .map(cve => {
-                cve = cve.trim().toUpperCase();
-                // Add CVE- prefix if missing
-                if (cve.match(/^\d{4}-\d+$/)) {
-                    return 'CVE-' + cve;
-                }
-                return cve;
-            })
-            .filter(cve => cve.match(/^CVE-\d{4}-\d+$/));
+        // Parse input into CVE IDs
+        const inputCVEs = this.searchEngine.parseInput(inputText);
 
         if (inputCVEs.length === 0) {
-            errorDiv.classList.remove('hidden');
-            document.getElementById('error-message').textContent = 'Please enter valid CVE(s)';
+            this.uiRenderer.showError('Please enter valid CVE(s)');
             return;
         }
 
-        // If CSV is not loaded
-        if (!csvData || csvData.length === 0) {
-            errorDiv.classList.remove('hidden');
-            document.getElementById('error-message').textContent = 'CVE data not loaded. Please reload the page and try again.';
+        // Check if data is loaded
+        if (!this.dataManager.isLoaded()) {
+            this.uiRenderer.showError('CVE data not loaded. Please reload the page and try again.');
             return;
         }
 
-        // Find matching CVEs
-        const matchedCVEs = [];
-        
-        inputCVEs.forEach(cve => {
-            const match = csvData.find(row => row && row.cve === cve);
-            if (match) {
-                matchedCVEs.push(match);
-            }
-        });
+        // Search for CVEs
+        const matchedCVEs = this.searchEngine.search(inputCVEs);
 
-        // Handle no matches
         if (matchedCVEs.length === 0) {
-            errorDiv.classList.remove('hidden');
-            document.getElementById('error-message').textContent = 'No matching CVEs found';
+            this.uiRenderer.showError('No matching CVEs found');
             return;
         }
 
-        // Store as original search results and apply current filters and sorting
-        originalSearchResults = matchedCVEs;
-        const filteredAndSorted = filterAndSortResults(matchedCVEs);
+        // Store original results and apply filters/sort
+        this.originalSearchResults = matchedCVEs;
+        const filteredAndSorted = this.applyFiltersAndSort();
         
-        // Track search analytics
-        trackSearch(inputText, matchedCVEs.length);
+        // Track search
+        this.analytics.trackSearch(inputText, matchedCVEs.length);
         
-        // Save recent search
-        saveRecentSearch(inputText);
+        // Save to recent searches
+        this.saveRecentSearch(inputText);
         
-        // Display matched CVEs
-        displayCVEResults(filteredAndSorted, true);
-    });
+        // Display results
+        this.currentResults = filteredAndSorted;
+        this.uiRenderer.renderResults(filteredAndSorted);
 
-    // Export button event listener
-    exportBtn.addEventListener('click', function() {
-        if (currentResults.length === 0) {
+        // Mark first search done
+        if (!this.firstSearchDone) {
+            this.firstSearchDone = true;
+        }
+    }
+
+    /**
+     * Handle export action
+     */
+    handleExport() {
+        if (this.currentResults.length === 0) {
             alert('No results to export');
             return;
         }
 
-        // Create CSV content
-        const headers = ['CVE', 'Base Score', 'Base Severity', 'CVSS-BT Score', 'CVSS-BT Severity', 'CVSS-TE Score', 'CVSS-TE Severity', 'EPSS Score', 'CVSS-BT Vector', 'Published Date'];
-        const csvContent = [
-            headers.join(','),
-            ...currentResults.map(cve => 
-                [
-                    cve.cve, 
-                    cve.base_score, 
-                    cve.base_severity,
-                    cve['cvss-bt_score'],
-                    cve['cvss-bt_severity'],
-                    cve['cvss-te_score'], 
-                    cve['cvss-te_severity'],
-                    cve.epss ? (cve.epss * 100).toFixed(2) + '%' : '0%',
-                    `"${(cve['cvss-bt_vector'] || '').replace(/"/g, '""')}"`,
-                    cve.published_date
-                ].join(',')
-            )
-        ].join('\n');
+        try {
+            this.exportManager.exportToCSV(this.currentResults);
+            this.analytics.trackExport(this.currentResults.length);
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Error exporting results: ' + error.message);
+        }
+    }
 
-        // Track export analytics
-        trackExport(currentResults.length);
-
-        // Create and trigger download
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'cvss-te-results.csv');
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
-
-    // Filter and sort event listeners
-    severityFilter.addEventListener('change', function() {
-        trackFilterChange('severity', this.value);
+    /**
+     * Handle filter change
+     */
+    handleFilterChange() {
+        this.analytics.trackFilterChange('severity', this.elements.severityFilter.value);
         
-        // Always filter from original search results, not the currently displayed filtered results
-        if (originalSearchResults.length > 0) {
-            const filtered = filterAndSortResults(originalSearchResults);
-            displayCVEResults(filtered);
+        if (this.originalSearchResults.length > 0) {
+            const filtered = this.applyFiltersAndSort();
+            this.currentResults = filtered;
+            this.uiRenderer.renderResults(filtered);
         }
-    });
+    }
 
-    sortBy.addEventListener('change', function() {
-        trackSortChange(this.value);
+    /**
+     * Handle sort change
+     */
+    handleSortChange() {
+        this.analytics.trackSortChange(this.elements.sortBy.value);
         
-        // Always sort from original search results, not the currently displayed filtered results
-        if (originalSearchResults.length > 0) {
-            const filtered = filterAndSortResults(originalSearchResults);
-            displayCVEResults(filtered);
+        if (this.originalSearchResults.length > 0) {
+            const filtered = this.applyFiltersAndSort();
+            this.currentResults = filtered;
+            this.uiRenderer.renderResults(filtered);
         }
-    });
+    }
 
-    // Modal close button events
-    closeModal.addEventListener('click', closeDetailModal);
-    closeModalBtn.addEventListener('click', closeDetailModal);
-    
-    // Close modal when clicking outside content
-    modal.addEventListener('click', function(event) {
-        if (event.target === modal) {
-            closeDetailModal();
+    /**
+     * Apply current filters and sorting to original search results
+     * @returns {Array<Object>} Filtered and sorted results
+     */
+    applyFiltersAndSort() {
+        const severityFilter = this.elements.severityFilter.value;
+        const sortBy = this.elements.sortBy.value;
+        return this.searchEngine.filterAndSort(this.originalSearchResults, severityFilter, sortBy);
+    }
+
+    /**
+     * Show CVE details modal
+     * @param {Object} cve - CVE data
+     */
+    showCVEDetails(cve) {
+        this.uiRenderer.showModal(cve);
+        this.analytics.trackCVEView(cve.cve, cve['cvss-te_severity']);
+    }
+
+    /**
+     * Close modal
+     */
+    closeModal() {
+        this.uiRenderer.closeModal();
+    }
+
+    /**
+     * Save search to recent searches
+     * @param {string} searchTerm - Search term
+     */
+    saveRecentSearch(searchTerm) {
+        const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+        recentSearches.unshift(searchTerm);
+        if (recentSearches.length > CONFIG.MAX_RECENT_SEARCHES) {
+            recentSearches.pop();
         }
-    });
-    
-    // Close modal on escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-            closeDetailModal();
-        }
-    });
+        localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+        this.displayRecentSearches();
+    }
 
-    // Keyboard shortcut for search (Enter in the search box)
-    cveInput.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            searchBtn.click();
-        }
-    });
+    /**
+     * Display recent searches
+     */
+    displayRecentSearches() {
+        const recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+        this.uiRenderer.displayRecentSearches(recentSearches, (searchTerm) => {
+            this.elements.cveInput.value = searchTerm;
+            this.handleSearch();
+        });
+    }
+}
 
-    // Scoring info panel controls
-    const scoringInfoPanel = document.getElementById('scoring-info-panel');
-    const showScoringInfoBtn = document.getElementById('show-scoring-info');
-    const closeInfoPanelBtn = document.getElementById('close-info-panel');
-
-    showScoringInfoBtn.addEventListener('click', function() {
-        scoringInfoPanel.classList.remove('hidden');
-        // Track info panel view
-        if (typeof gtag === 'function') {
-            gtag('event', 'view_info_panel');
-        }
-        // Smooth scroll to the panel
-        scoringInfoPanel.scrollIntoView({ behavior: 'smooth' });
-    });
-
-    closeInfoPanelBtn.addEventListener('click', function() {
-        scoringInfoPanel.classList.add('hidden');
-    });
-
-    // Remove the automatic display on first search
-    let firstSearchDone = false;
-    searchBtn.addEventListener('click', function() {
-        if (!firstSearchDone && currentResults.length > 0) {
-            firstSearchDone = true;
-        }
-    });
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    window.cvssApp = new CVSSApp();
 });
-
