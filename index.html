@@ -34,10 +34,12 @@
     </script>
     
     <!-- External Libraries with SRI (Subresource Integrity) -->
-    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
+    <!-- Tailwind CDN: No SRI (dynamic content) - CSP whitelist only -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse: Full SRI protection -->
     <script 
         src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js" 
-        integrity="sha512-VnKxK8vDj7cq4vQNp0oDY0kVZyKF0x4SMYVpMWKY6Dou8G0GaONEfQg8V1K6m1vULBULOWeFEq2D5VPxZ0wH8aQ==" 
+        integrity="sha512-SGWgwwRA8xZgEoKiex3UubkSkV1zSE1BS6O4pXcaxcNtUlQsOmOmhVnDwIvqGRfEmuz83tIGL13cXMZn6upPyg==" 
         crossorigin="anonymous"
         referrerpolicy="no-referrer">
     </script>
