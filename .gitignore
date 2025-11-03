@@ -6,3 +6,4 @@
 code/__pycache__/
 /code/data/
 test.py
+/docs*

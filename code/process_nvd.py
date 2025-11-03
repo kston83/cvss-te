@@ -36,13 +36,13 @@ def create_directories():
 def generate_nvd_feeds():
     """Generate a dictionary of all NVD feeds from 2002 to present year"""
     feeds = {
-        'recent': 'https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz',
-        'modified': 'https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-modified.json.gz',
+        'recent': 'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-recent.json.gz',
+        'modified': 'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-modified.json.gz',
     }
     
     current_year = date.today().year
     for year in range(2002, current_year + 1):
-        feeds[str(year)] = f'https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-{year}.json.gz'
+        feeds[str(year)] = f'https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{year}.json.gz'
     
     return feeds
 
@@ -58,7 +58,7 @@ def download_nvd_feeds(max_retries=3, retry_delay=5):
     downloaded_files = []
     
     for feed_name, feed_url in NVD_FEEDS.items():
-        output_path = f"nvdcve-{feed_name}.json"
+        output_path = f"nvdcve-2.0-{feed_name}.json"
         
         # Skip downloading if file exists and is less than 1 day old (except for recent/modified)
         if os.path.exists(output_path) and feed_name not in ['recent', 'modified']:
@@ -135,6 +135,107 @@ def download_epss_data(url, backup_path=None):
             logger.error("No backup EPSS data available")
             raise
 
+def get_primary_metric(metrics_array):
+    """
+    Extract primary CVSS metric from array of metrics.
+    
+    Prefers metrics in this order:
+    1. Type = 'Primary'
+    2. Source = 'nvd@nist.gov'
+    3. First entry in array
+    
+    Args:
+        metrics_array (list): Array of CVSS metric objects
+        
+    Returns:
+        dict: Selected metric object, or None if array is empty
+    """
+    if not metrics_array:
+        return None
+    
+    # Prefer Primary type
+    primary = [m for m in metrics_array if m.get('type') == 'Primary']
+    if primary:
+        return primary[0]
+    
+    # Prefer nvd@nist.gov source
+    nvd_source = [m for m in metrics_array if 'nvd@nist.gov' in m.get('source', '')]
+    if nvd_source:
+        return nvd_source[0]
+    
+    # Fallback to first entry
+    return metrics_array[0]
+
+
+def extract_cvss_metrics(entry):
+    """
+    Extract CVSS metrics from JSON 2.0 entry with correct baseSeverity handling.
+    
+    🚨 CRITICAL: baseSeverity location differs by CVSS version!
+    - CVSS v2: baseSeverity is at metric level (outside cvssData)
+    - CVSS v3.0/3.1/4.0: baseSeverity is inside cvssData
+    
+    Args:
+        entry (dict): The 'cve' object from JSON 2.0 vulnerability
+        
+    Returns:
+        tuple: (version, baseScore, baseSeverity, vectorString)
+               Returns ('N/A', 'N/A', 'N/A', 'N/A') if no CVSS data found
+    """
+    metrics = entry.get('metrics', {})
+    
+    # Try CVSS 4.0 first (newest)
+    if 'cvssMetricV40' in metrics:
+        metric = get_primary_metric(metrics['cvssMetricV40'])
+        if metric:
+            cvss_data = metric.get('cvssData', {})
+            return (
+                '4.0',
+                cvss_data.get('baseScore', 'N/A'),
+                cvss_data.get('baseSeverity', 'N/A'),  # Inside cvssData for v4.0
+                cvss_data.get('vectorString', 'N/A')
+            )
+    
+    # Try CVSS 3.1
+    elif 'cvssMetricV31' in metrics:
+        metric = get_primary_metric(metrics['cvssMetricV31'])
+        if metric:
+            cvss_data = metric.get('cvssData', {})
+            return (
+                '3.1',
+                cvss_data.get('baseScore', 'N/A'),
+                cvss_data.get('baseSeverity', 'N/A'),  # Inside cvssData for v3.1
+                cvss_data.get('vectorString', 'N/A')
+            )
+    
+    # Try CVSS 3.0
+    elif 'cvssMetricV30' in metrics:
+        metric = get_primary_metric(metrics['cvssMetricV30'])
+        if metric:
+            cvss_data = metric.get('cvssData', {})
+            return (
+                '3.0',
+                cvss_data.get('baseScore', 'N/A'),
+                cvss_data.get('baseSeverity', 'N/A'),  # Inside cvssData for v3.0
+                cvss_data.get('vectorString', 'N/A')
+            )
+    
+    # Try CVSS 2.0 (legacy)
+    elif 'cvssMetricV2' in metrics:
+        metric = get_primary_metric(metrics['cvssMetricV2'])
+        if metric:
+            cvss_data = metric.get('cvssData', {})
+            return (
+                '2.0',
+                cvss_data.get('baseScore', 'N/A'),
+                metric.get('baseSeverity', 'N/A'),  # ⚠️ OUTSIDE cvssData for v2!
+                cvss_data.get('vectorString', 'N/A')
+            )
+    
+    # No CVSS data found
+    return ('N/A', 'N/A', 'N/A', 'N/A')
+
+
 def process_nvd_files():
     """
     Processes the NVD JSON files and returns a DataFrame containing the data.
@@ -154,52 +255,39 @@ def process_nvd_files():
         try:
             with file_path.open('r', encoding='utf-8') as file:
                 data = json.load(file)
-                vulnerabilities = data.get('CVE_Items', [])
+                # JSON 2.0 uses 'vulnerabilities' instead of 'CVE_Items'
+                vulnerabilities = data.get('vulnerabilities', [])
                 logger.info(f'CVEs in {file_path.name}: {len(vulnerabilities)}')
 
-                for entry in vulnerabilities:
+                for vuln_item in vulnerabilities:
                     try:
-                        # Skip ** entries (reserved/rejected CVEs)
-                        if entry['cve']['description']['description_data'][0]['value'].startswith('**'):
+                        # JSON 2.0: unwrap the 'cve' object
+                        entry = vuln_item.get('cve', {})
+                        
+                        # JSON 2.0: Filter by vulnStatus instead of checking for '**'
+                        vuln_status = entry.get('vulnStatus', '')
+                        if vuln_status in ['Rejected', 'Reserved']:
                             continue
-                            
-                        cve = entry['cve']['CVE_data_meta']['ID']
                         
-                        # Extract CVSS data based on version
-                        if 'metricV40' in entry.get('impact', {}):
-                            # CVSS 4.0 handling
-                            cvss_version = '4.0'
-                            base_score = entry['impact']['metricV40']['baseScore']
-                            base_severity = entry['impact']['metricV40']['baseSeverity']
-                            base_vector = entry['impact']['metricV40']['vectorString']
-                            
-                        elif 'baseMetricV3' in entry.get('impact', {}):
-                            # CVSS 3.x handling - determine if 3.0 or 3.1
-                            version_str = entry['impact']['baseMetricV3']['cvssV3'].get('version', '3.0')
-                            cvss_version = '3.1' if '3.1' in version_str else '3.0'
-                            base_score = entry['impact']['baseMetricV3']['cvssV3']['baseScore']
-                            base_severity = entry['impact']['baseMetricV3']['cvssV3']['baseSeverity']
-                            base_vector = entry['impact']['baseMetricV3']['cvssV3']['vectorString']
-                            
-                        elif 'baseMetricV2' in entry.get('impact', {}):
-                            # CVSS 2.0 handling
-                            cvss_version = '2.0'
-                            base_score = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('baseScore', 'N/A')
-                            base_severity = entry.get('impact', {}).get('baseMetricV2', {}).get('severity', 'N/A')
-                            base_vector = entry.get('impact', {}).get('baseMetricV2', {}).get('cvssV2', {}).get('vectorString', 'N/A')
-                            
-                        else:
-                            # No CVSS data available
-                            cvss_version = 'N/A'
-                            base_score = 'N/A'
-                            base_severity = 'N/A'
-                            base_vector = 'N/A'
+                        # JSON 2.0: CVE ID is directly under 'id'
+                        cve = entry.get('id', 'N/A')
                         
-                        # Extract additional metadata
-                        assigner = entry['cve']['CVE_data_meta']['ASSIGNER']
-                        published_date = entry['publishedDate']
-                        last_modified_date = entry.get('lastModifiedDate', '')
-                        description = entry['cve']['description']['description_data'][0]['value']
+                        # JSON 2.0: Extract CVSS metrics using helper function
+                        cvss_version, base_score, base_severity, base_vector = extract_cvss_metrics(entry)
+                        
+                        # JSON 2.0: sourceIdentifier replaces ASSIGNER
+                        assigner = entry.get('sourceIdentifier', 'N/A')
+                        
+                        # JSON 2.0: dates are directly under cve object
+                        published_date = entry.get('published', '')
+                        last_modified_date = entry.get('lastModified', '')
+                        
+                        # JSON 2.0: descriptions array, filter for English
+                        descriptions = entry.get('descriptions', [])
+                        description = next(
+                            (d.get('value', 'N/A') for d in descriptions if d.get('lang') == 'en'),
+                            'N/A'
+                        )
 
                         # Create dictionary entry for this CVE
                         dict_entry = {
@@ -215,7 +303,8 @@ def process_nvd_files():
                         }
                         nvd_dict.append(dict_entry)
                     except Exception as e:
-                        logger.warning(f"Error processing entry in {file_path.name} for CVE {entry.get('cve', {}).get('CVE_data_meta', {}).get('ID', 'Unknown')}: {e}")
+                        cve_id = vuln_item.get('cve', {}).get('id', 'Unknown')
+                        logger.warning(f"Error processing entry in {file_path.name} for CVE {cve_id}: {e}")
                         continue
         except Exception as e:
             logger.error(f"Error processing file {file_path.name}: {e}")

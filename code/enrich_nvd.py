@@ -497,8 +497,22 @@ def compute_cvss(row):
             try:
                 c = cvss.CVSS4(vector)
                 # For CVSS 4.0, get the BT (Base+Threat) score
-                score = c.scores()[1]  # Index 1 contains BT score
-                return round(score, 1), str(c.severities()[1]).upper()
+                scores_tuple = c.scores()
+                severities_tuple = c.severities()
+                
+                # Handle different possible return formats
+                if isinstance(scores_tuple, tuple) and len(scores_tuple) > 1:
+                    score = scores_tuple[1]  # BT score at index 1
+                    severity = str(severities_tuple[1]).upper() if len(severities_tuple) > 1 else 'UNKNOWN'
+                elif isinstance(scores_tuple, (int, float)):
+                    score = scores_tuple
+                    severity = str(severities_tuple).upper() if severities_tuple else 'UNKNOWN'
+                else:
+                    # Try base score as fallback
+                    score = c.base_score if hasattr(c, 'base_score') else scores_tuple[0]
+                    severity = str(severities_tuple[0]).upper() if severities_tuple else 'UNKNOWN'
+                
+                return round(float(score), 1), severity
             except Exception as e:
                 logger.warning(f"Error computing CVSS 4.0 score for {cve_id}: {e}")
                 return 'UNKNOWN', 'UNKNOWN'
