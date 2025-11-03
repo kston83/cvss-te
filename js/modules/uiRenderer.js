@@ -26,11 +26,17 @@ export class UIRenderer {
         // Show the stats bar
         this.elements.statsBar.classList.remove('hidden');
 
-        // Render each row
+        // Use DocumentFragment for batch DOM updates (performance optimization)
+        const fragment = document.createDocumentFragment();
+        
+        // Render each row into fragment
         results.forEach(cve => {
             const row = this.createResultRow(cve);
-            this.elements.resultsBody.appendChild(row);
+            fragment.appendChild(row);
         });
+
+        // Single DOM insertion (much faster than individual appendChild calls)
+        this.elements.resultsBody.appendChild(fragment);
 
         // Show results container
         this.showResults();

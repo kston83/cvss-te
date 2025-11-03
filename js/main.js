@@ -64,8 +64,8 @@ class CVSSApp {
         // Set up UI renderer callback
         this.uiRenderer.setOnViewDetails((cve) => this.showCVEDetails(cve));
 
-        // Load data
-        await this.loadInitialData();
+        // DON'T load data immediately - lazy load on first search for better performance
+        // await this.loadInitialData();
 
         // Fetch last update time
         this.fetchLastUpdateTime();
@@ -78,18 +78,25 @@ class CVSSApp {
     }
 
     /**
-     * Load initial CSV data
+     * Ensure CSV data is loaded (lazy loading)
+     * @returns {Promise<boolean>} True if data is loaded successfully
      */
-    async loadInitialData() {
+    async ensureDataLoaded() {
+        if (this.dataManager.isLoaded()) {
+            return true;
+        }
+
         this.uiRenderer.showLoading();
 
         try {
             await this.dataManager.loadData();
             this.uiRenderer.hideLoading();
+            return true;
         } catch (error) {
             console.error('Error loading CSV:', error);
             this.uiRenderer.hideLoading();
             this.uiRenderer.showError('Error loading CVE data: ' + error.message);
+            return false;
         }
     }
 
@@ -151,11 +158,13 @@ class CVSSApp {
         // Export button
         this.elements.exportBtn.addEventListener('click', () => this.handleExport());
 
-        // Filter change
-        this.elements.severityFilter.addEventListener('change', () => this.handleFilterChange());
+        // Filter change (debounced for better performance with rapid changes)
+        const debouncedFilterChange = Utils.debounce(() => this.handleFilterChange(), 100);
+        this.elements.severityFilter.addEventListener('change', () => debouncedFilterChange());
 
-        // Sort change
-        this.elements.sortBy.addEventListener('change', () => this.handleSortChange());
+        // Sort change (debounced for better performance with rapid changes)
+        const debouncedSortChange = Utils.debounce(() => this.handleSortChange(), 100);
+        this.elements.sortBy.addEventListener('change', () => debouncedSortChange());
 
         // Modal close events
         this.elements.closeModal.addEventListener('click', () => this.closeModal());
@@ -198,7 +207,7 @@ class CVSSApp {
     /**
      * Handle search action
      */
-    handleSearch() {
+    async handleSearch() {
         // Reset previous results and errors
         this.uiRenderer.hideError();
         this.uiRenderer.hideResults();
@@ -219,10 +228,10 @@ class CVSSApp {
             return;
         }
 
-        // Check if data is loaded
-        if (!this.dataManager.isLoaded()) {
-            this.uiRenderer.showError('CVE data not loaded. Please reload the page and try again.');
-            return;
+        // Lazy load data if not already loaded
+        const dataLoaded = await this.ensureDataLoaded();
+        if (!dataLoaded) {
+            return; // Error already shown by ensureDataLoaded
         }
 
         // Search for CVEs
@@ -272,12 +281,13 @@ class CVSSApp {
     }
 
     /**
-     * Handle filter change
+     * Handle filter change (debounced for performance)
      */
     handleFilterChange() {
         this.analytics.trackFilterChange('severity', this.elements.severityFilter.value);
         
         if (this.originalSearchResults.length > 0) {
+            // Debounce is applied in setupEventListeners
             const filtered = this.applyFiltersAndSort();
             this.currentResults = filtered;
             this.uiRenderer.renderResults(filtered);
@@ -285,12 +295,13 @@ class CVSSApp {
     }
 
     /**
-     * Handle sort change
+     * Handle sort change (debounced for performance)
      */
     handleSortChange() {
         this.analytics.trackSortChange(this.elements.sortBy.value);
         
         if (this.originalSearchResults.length > 0) {
+            // Debounce is applied in setupEventListeners
             const filtered = this.applyFiltersAndSort();
             this.currentResults = filtered;
             this.uiRenderer.renderResults(filtered);
