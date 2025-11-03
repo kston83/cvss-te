@@ -11,13 +11,46 @@ This repository enhances vulnerability scoring through two complementary approac
 1. **CVSS-BT (Base + Temporal)**: Enriches standard CVSS scores by incorporating the Exploit Code Maturity/Exploitability (E) Temporal Metric using the official CVSS specification.
 2. **CVSS-TE (Threat-Enhanced)**: An advanced scoring system that extends beyond CVSS-BT by incorporating detailed exploit quality metrics and additional threat intelligence context.
 
-## 🌐 Interactive Web Lookup Tool
+## Interactive Web Application
+
 ![cvss-te lookup tool interface](image.png)
-- **Live Web Interface**: [CVSS-TE Vulnerability Lookup](https://kston83.github.io/cvss-te/)
-- Search and filter vulnerabilities by CVE
-- Detailed vulnerability insights
-- Export results to CSV
-- Real-time threat intelligence visualization
+
+**Live Web Interface**: [CVSS-TE Threat Intelligence Dashboard](https://kston83.github.io/cvss-te/)
+
+The CVSS-TE web application provides a comprehensive threat intelligence platform with two main interfaces:
+
+### Threat Intelligence Dashboard (Landing Page)
+
+The dashboard provides immediate visibility into the current threat landscape with three priority-focused sections:
+
+- **CISA Known Exploited Vulnerabilities**: Displays the most recently added vulnerabilities to CISA's KEV catalog, sorted by official date added. These represent mandatory patching requirements for federal agencies and critical threats confirmed to be exploited in the wild.
+
+- **Recently Published Vulnerabilities**: Shows newly published CVEs from the last 7, 14, or 30 days, providing early awareness of emerging vulnerabilities before exploitation occurs.
+
+- **Emerging Threats**: Identifies recent vulnerabilities (last 30-90 days) that exhibit exploitation signals including EPSS scores above 30%, public exploit availability (Metasploit, ExploitDB, Nuclei, GitHub PoCs), or CISA KEV status. This section highlights new vulnerabilities that pose immediate risk.
+
+The dashboard automatically enriches data with official CISA KEV information, including the date each vulnerability was added to the catalog, due dates for remediation, and known ransomware campaign usage. KEV data is fetched from CISA's live JSON feed and cached locally for 24 hours to ensure up-to-date information while maintaining performance.
+
+### CVE Lookup Tool
+
+A dedicated search interface for detailed vulnerability analysis:
+
+- Search and filter vulnerabilities by CVE ID
+- Sort by multiple criteria (CVSS-TE score, EPSS, publication date)
+- Filter by severity level (Critical, High, Medium, Low)
+- Detailed vulnerability insights with scoring comparisons
+- Threat indicator visualization (exploit availability, KEV status)
+- Export results to CSV for further analysis
+- Direct URL linking for sharing specific CVE searches
+
+### Key Features
+
+- **Enhanced CVE Cards**: Display both CVSS-TE and Base scores with clear labels, vulnerability descriptions, EPSS scores, vendor information, and threat indicators
+- **Real-time KEV Enrichment**: Automatically fetches and merges official CISA KEV catalog data including date added, due dates, and ransomware usage indicators
+- **Sortable Sections**: All dashboard sections support sorting by CVSS-TE score, publication date, or EPSS score
+- **Responsive Design**: Fully functional on desktop, tablet, and mobile devices
+- **No Backend Required**: Pure client-side application with data loaded from static CSV file
+- **Privacy-Focused**: Minimal analytics, no user tracking, all processing done locally
 
 ## Data Sources
 
