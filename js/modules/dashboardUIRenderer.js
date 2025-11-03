@@ -135,7 +135,7 @@ export class DashboardUIRenderer {
                 );
                 this.analytics.trackNavigation('dashboard', 'lookup', 'cve_card');
             }
-            window.location.href = `/lookup.html?cve=${cve.cve}`;
+            window.location.href = `lookup.html?cve=${cve.cve}`;
         });
         
         return card;

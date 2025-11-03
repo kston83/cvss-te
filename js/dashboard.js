@@ -307,7 +307,7 @@ class DashboardApp {
             this.analytics.trackNavigation('dashboard', 'lookup', 'quick_search');
             
             // Navigate to lookup page with pre-filled search
-            window.location.href = `/lookup.html?cve=${encodeURIComponent(searchTerm)}`;
+            window.location.href = `lookup.html?cve=${encodeURIComponent(searchTerm)}`;
         }
     }
 
