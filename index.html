@@ -10,6 +10,9 @@
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
     
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    
     <!-- Meta tags for SEO and social sharing -->
     <meta name="description" content="CVSS-TE: A Threat-Enhanced Vulnerability Scoring System combining CVSS Base, Temporal metrics, and real-world threat intelligence for better vulnerability prioritization.">
     <meta name="keywords" content="CVSS, vulnerability scoring, cybersecurity, threat intelligence, CVE lookup">
@@ -30,8 +33,14 @@
       gtag('config', 'G-27RZTCLPTE', { 'anonymize_ip': true });
     </script>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- External Libraries with SRI (Subresource Integrity) -->
+    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
+    <script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js" 
+        integrity="sha512-VnKxK8vDj7cq4vQNp0oDY0kVZyKF0x4SMYVpMWKY6Dou8G0GaONEfQg8V1K6m1vULBULOWeFEq2D5VPxZ0wH8aQ==" 
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
+    </script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
