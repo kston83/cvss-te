@@ -6,8 +6,9 @@
 import * as Utils from './utils.js';
 
 export class DashboardUIRenderer {
-    constructor() {
+    constructor(analytics = null) {
         // Element references set in init()
+        this.analytics = analytics;
     }
 
     /**
@@ -58,9 +59,10 @@ export class DashboardUIRenderer {
     /**
      * Render CVE card (compact version for lists)
      * @param {Object} cve - CVE data
+     * @param {string} source - Source section (e.g., "cisa_kevs", "recent_cves", "emerging_threats")
      * @returns {HTMLElement} Card element
      */
-    renderCveCard(cve) {
+    renderCveCard(cve, source = 'unknown') {
         const card = document.createElement('div');
         card.className = 'border border-gray-200 rounded-lg p-4 cursor-pointer bg-gray-50 hover:bg-gray-100 hover:shadow-md transition-all duration-200';
         
@@ -124,6 +126,15 @@ export class DashboardUIRenderer {
         
         // Click to navigate to lookup page with CVE pre-filled
         card.addEventListener('click', () => {
+            // Track CVE card click
+            if (this.analytics) {
+                this.analytics.trackCVECardClick(
+                    cve.cve,
+                    source,
+                    cve['cvss-te_severity'] || 'Unknown'
+                );
+                this.analytics.trackNavigation('dashboard', 'lookup', 'cve_card');
+            }
             window.location.href = `/lookup.html?cve=${cve.cve}`;
         });
         
@@ -149,8 +160,9 @@ export class DashboardUIRenderer {
      * Render list of CVEs
      * @param {Array} cves - Array of CVE objects
      * @param {HTMLElement} container - Container element
+     * @param {string} source - Source section identifier
      */
-    renderCveList(cves, container) {
+    renderCveList(cves, container, source = 'unknown') {
         container.innerHTML = '';
         
         if (cves.length === 0) {
@@ -160,7 +172,7 @@ export class DashboardUIRenderer {
         
         const fragment = document.createDocumentFragment();
         cves.forEach(cve => {
-            fragment.appendChild(this.renderCveCard(cve));
+            fragment.appendChild(this.renderCveCard(cve, source));
         });
         container.appendChild(fragment);
     }
@@ -170,7 +182,7 @@ export class DashboardUIRenderer {
      * @param {Array} kevs - Array of KEV CVEs
      */
     renderKevs(kevs) {
-        this.renderCveList(kevs, this.elements.kevList);
+        this.renderCveList(kevs, this.elements.kevList, 'cisa_kevs');
     }
 
     /**
@@ -178,7 +190,7 @@ export class DashboardUIRenderer {
      * @param {Array} cves - Array of recent CVEs
      */
     renderRecent(cves) {
-        this.renderCveList(cves, this.elements.recentList);
+        this.renderCveList(cves, this.elements.recentList, 'recent_cves');
     }
 
     /**
@@ -186,7 +198,7 @@ export class DashboardUIRenderer {
      * @param {Array} cves - Array of emerging threat CVEs
      */
     renderEmerging(cves) {
-        this.renderCveList(cves, this.elements.emergingList);
+        this.renderCveList(cves, this.elements.emergingList, 'emerging_threats');
     }
 }
 

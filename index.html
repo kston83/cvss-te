@@ -103,6 +103,56 @@
         <!-- Dashboard Content (hidden until loaded) -->
         <div id="dashboard-content" class="hidden">
             
+            <!-- About CVSS-TE Info Banner -->
+            <section id="about-cvss-te" class="mb-8">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-blue-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                                i
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">About CVSS-TE (Threat-Enhanced Scoring)</h3>
+                                <p class="text-sm text-gray-600">Enhanced vulnerability prioritization with real-world threat intelligence</p>
+                            </div>
+                        </div>
+                        <button id="about-close-btn" class="text-gray-400 hover:text-gray-600 transition-colors p-1" title="Dismiss">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">What is CVSS-TE?</h4>
+                            <p class="text-sm text-gray-600">CVSS-TE extends standard CVSS scores by incorporating exploit availability, quality, and real-world threat intelligence to provide more accurate vulnerability prioritization.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">Why Use CVSS-TE?</h4>
+                            <p class="text-sm text-gray-600">Reduces false positives by downgrading vulnerabilities with no exploitation evidence while elevating actively exploited threats to help focus remediation efforts.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg">
+                            <h4 class="font-semibold text-gray-800 mb-2">Data Sources</h4>
+                            <p class="text-sm text-gray-600">CISA KEV, EPSS, Metasploit, ExploitDB, Nuclei, and GitHub PoCs combined with CVSS temporal metrics for comprehensive scoring.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-3 items-center">
+                        <button id="learn-more-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm">
+                            Learn More
+                        </button>
+                        <a href="https://github.com/kston83/cvss-te/blob/main/whitepaper.md" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm border border-gray-300">
+                            Read Whitepaper
+                        </a>
+                        <a href="https://github.com/kston83/cvss-te" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm border border-gray-300">
+                            View on GitHub
+                        </a>
+                        <span class="text-xs text-gray-500 ml-auto hidden md:inline">This banner can be dismissed and won't show again</span>
+                    </div>
+                </div>
+            </section>
+
             <!-- Statistics Cards -->
             <section id="statistics" class="mb-8">
                 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -235,6 +285,147 @@
 
         </div>
     </main>
+
+    <!-- Learn More Modal -->
+    <div id="learn-more-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center hidden z-50 transition-opacity duration-200">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden m-4 shadow-2xl transform transition-all duration-200">
+            <!-- Header -->
+            <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-800">Understanding CVSS-TE Scoring</h3>
+                        <p class="text-sm text-gray-600 mt-1">Threat-Enhanced vulnerability prioritization explained</p>
+                    </div>
+                    <button id="modal-close-btn" class="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-lg hover:bg-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Scrollable Content -->
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                
+                <!-- Overview -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">What Makes CVSS-TE Different?</h4>
+                    <p class="text-gray-700 mb-3">
+                        Standard CVSS Base scores measure the technical severity of a vulnerability, but don't account for real-world threat context. 
+                        A vulnerability might have a high base score but no exploits, while another with a moderate score could be actively exploited in the wild.
+                    </p>
+                    <p class="text-gray-700">
+                        <strong>CVSS-TE solves this problem</strong> by incorporating exploit availability, quality, and threat intelligence to provide 
+                        scores that better reflect actual risk.
+                    </p>
+                </div>
+
+                <!-- Three Scoring Levels -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Three Levels of Scoring</h4>
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-gray-400">
+                            <h5 class="font-semibold text-gray-800 mb-1">CVSS Base Score</h5>
+                            <p class="text-sm text-gray-600">Standard severity rating based on technical characteristics (impact, exploitability). Provided by NVD.</p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+                            <h5 class="font-semibold text-gray-800 mb-1">CVSS-BT Score (Base + Temporal)</h5>
+                            <p class="text-sm text-gray-600">Adds exploit maturity using the official CVSS Temporal metric. Adjusts scores based on whether exploits exist (Unproven, Proof-of-Concept, Functional, High, Attacked).</p>
+                        </div>
+                        <div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-600">
+                            <h5 class="font-semibold text-gray-800 mb-1">CVSS-TE Score (Threat-Enhanced)</h5>
+                            <p class="text-sm text-gray-600">Extends CVSS-BT by evaluating exploit quality (reliability, ease of use, effectiveness) and incorporating threat intelligence factors (KEV status, EPSS scores, exploit sources).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Benefits -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Key Benefits</h4>
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-green-800 mb-2">Reduces False Positives</h5>
+                            <p class="text-sm text-gray-700">Vulnerabilities with high base scores but no exploitation evidence are appropriately downgraded, reducing alert fatigue.</p>
+                            <p class="text-xs text-gray-500 mt-2"><strong>Example:</strong> CVE with Base 9.1 → CVSS-TE 6.8 (no exploits)</p>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-red-800 mb-2">Highlights True Threats</h5>
+                            <p class="text-sm text-gray-700">Actively exploited vulnerabilities are properly elevated, even if base scores are moderate.</p>
+                            <p class="text-xs text-gray-500 mt-2"><strong>Example:</strong> CVE with Base 7.5 → CVSS-TE 8.3 (active exploits)</p>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-purple-800 mb-2">Context-Aware</h5>
+                            <p class="text-sm text-gray-700">Incorporates CISA KEV mandatory patching, EPSS exploitation probability, and multiple exploit sources.</p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-blue-800 mb-2">Actionable Priority</h5>
+                            <p class="text-sm text-gray-700">Focus remediation efforts on vulnerabilities that pose real-world risk rather than theoretical severity.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Sources -->
+                <div class="mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-3">Threat Intelligence Sources</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                            <div class="font-semibold text-sm text-gray-800">CISA KEV</div>
+                            <div class="text-xs text-gray-600 mt-1">Confirmed exploitation</div>
+                        </div>
+                        <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <div class="font-semibold text-sm text-gray-800">EPSS</div>
+                            <div class="text-xs text-gray-600 mt-1">Exploitation probability</div>
+                        </div>
+                        <div class="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                            <div class="font-semibold text-sm text-gray-800">Metasploit</div>
+                            <div class="text-xs text-gray-600 mt-1">Weaponized modules</div>
+                        </div>
+                        <div class="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <div class="font-semibold text-sm text-gray-800">ExploitDB</div>
+                            <div class="text-xs text-gray-600 mt-1">Public exploits</div>
+                        </div>
+                        <div class="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div class="font-semibold text-sm text-gray-800">Nuclei</div>
+                            <div class="text-xs text-gray-600 mt-1">Detection templates</div>
+                        </div>
+                        <div class="text-center p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <div class="font-semibold text-sm text-gray-800">GitHub PoCs</div>
+                            <div class="text-xs text-gray-600 mt-1">Proof-of-concepts</div>
+                        </div>
+                        <div class="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <div class="font-semibold text-sm text-gray-800">VulnCheck</div>
+                            <div class="text-xs text-gray-600 mt-1">KEV tracking</div>
+                        </div>
+                        <div class="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="font-semibold text-sm text-gray-800">NVD</div>
+                            <div class="text-xs text-gray-600 mt-1">CVE data</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Learn More -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                    <h4 class="font-semibold text-gray-800 mb-2">Want to Learn More?</h4>
+                    <p class="text-sm text-gray-700 mb-3">
+                        Read our comprehensive whitepaper for detailed methodology, formulas, and examples.
+                    </p>
+                    <div class="flex gap-3">
+                        <a href="https://github.com/kston83/cvss-te/blob/main/whitepaper.md" target="_blank" rel="noopener noreferrer" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm">
+                            Read Full Whitepaper
+                        </a>
+                        <a href="https://github.com/kston83/cvss-te" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-50 text-gray-700 font-semibold px-4 py-2 rounded-lg transition-all duration-200 text-sm border border-gray-300">
+                            View GitHub Repository
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="p-4 border-t border-gray-200 bg-gray-50 text-center">
+                <p class="text-xs text-gray-500">CVSS-TE combines official CVSS standards with real-world threat intelligence for better vulnerability prioritization</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="bg-slate-800 text-white py-8 mt-12">
