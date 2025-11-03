@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CVSS-Threat Enhanced (CVSS-TE) Vulnerability Lookup</title>
+    <title>CVSS-TE Threat Intelligence Dashboard</title>
     
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -11,13 +11,13 @@
     <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=()">
     
     <!-- Content Security Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; img-src 'self' data: https:; connect-src 'self' https://www.google-analytics.com https://www.cisa.gov; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
     
     <!-- Meta tags for SEO and social sharing -->
-    <meta name="description" content="CVSS-TE: A Threat-Enhanced Vulnerability Scoring System combining CVSS Base, Temporal metrics, and real-world threat intelligence for better vulnerability prioritization.">
-    <meta name="keywords" content="CVSS, vulnerability scoring, cybersecurity, threat intelligence, CVE lookup">
-    <meta property="og:title" content="CVSS-TE Vulnerability Lookup">
-    <meta property="og:description" content="Enhanced vulnerability scoring system combining CVSS with threat intelligence">
+    <meta name="description" content="CVSS-TE: Real-time vulnerability intelligence dashboard with threat-enhanced scoring, CISA KEVs, and EPSS insights.">
+    <meta name="keywords" content="CVSS, vulnerability scoring, cybersecurity, threat intelligence, CVE dashboard, CISA KEV">
+    <meta property="og:title" content="CVSS-TE Threat Intelligence Dashboard">
+    <meta property="og:description" content="Real-time vulnerability intelligence with threat-enhanced scoring">
     <meta property="og:url" content="https://your-domain.com">
     
     <!-- Favicon -->
@@ -33,10 +33,8 @@
       gtag('config', 'G-27RZTCLPTE', { 'anonymize_ip': true });
     </script>
     
-    <!-- External Libraries with SRI (Subresource Integrity) -->
-    <!-- Tailwind CDN: No SRI (dynamic content) - CSP whitelist only -->
+    <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse: Full SRI protection -->
     <script 
         src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js" 
         integrity="sha512-SGWgwwRA8xZgEoKiex3UubkSkV1zSE1BS6O4pXcaxcNtUlQsOmOmhVnDwIvqGRfEmuz83tIGL13cXMZn6upPyg==" 
@@ -46,240 +44,199 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
-    <header class="bg-gradient-to-r from-slate-800 to-slate-700 py-8 shadow-md">
-        <div class="container mx-auto px-4">
-            <h1 class="text-3xl font-bold text-white mb-2 text-center">CVSS-Threat Enhanced (CVSS-TE) Vulnerability Lookup</h1>
-            <p class="text-center text-gray-200 mb-1">Threat-Enhanced Vulnerability Scoring System</p>
-            <p class="text-center text-gray-300 text-sm" id="last-update-time">Last Updated: Loading...</p>
-        </div>
-    </header>
     
-    <main class="container mx-auto px-4 py-8">
-        <!-- Search Panel -->
-        <section class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-            <div class="mb-6">
-                <label for="cve-input" class="block text-gray-700 font-bold mb-2 text-lg">
-                    CVE Lookup
-                </label>
-                <input 
-                    type="text" 
-                    id="cve-input" 
-                    placeholder="CVE-2021-44228, CVE-2023-23397" 
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                >
-                <p class="text-gray-500 text-sm mt-2">
-                    Enter one or more CVE IDs separated by commas
+    <!-- Navigation Bar -->
+    <nav class="bg-slate-800 text-white py-4 shadow-lg">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center space-x-6">
+                <h1 class="text-xl font-bold">CVSS-TE</h1>
+                <a href="/" class="hover:text-blue-300 font-semibold transition-colors">Dashboard</a>
+                <a href="/lookup.html" class="hover:text-blue-300 transition-colors">CVE Lookup</a>
+            </div>
+            <div class="text-sm text-gray-300" id="last-update-nav">
+                Last Updated: Loading...
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Quick Search -->
+    <header class="bg-gradient-to-r from-slate-800 to-slate-700 py-12">
+        <div class="container mx-auto px-4">
+            <h1 class="text-4xl font-bold text-white mb-4 text-center">
+                CVSS-TE Threat Intelligence Dashboard
+            </h1>
+            <p class="text-center text-gray-200 mb-6">
+                Real-time vulnerability intelligence with threat-enhanced scoring
+            </p>
+            
+            <!-- Quick Search -->
+            <div class="max-w-2xl mx-auto">
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="quick-search-input"
+                        placeholder="Quick CVE Search (e.g., CVE-2024-1234)"
+                        class="flex-1 px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:outline-none"
+                    >
+                    <button 
+                        id="quick-search-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors"
+                    >
+                        Search
+                    </button>
+                </div>
+                <p class="text-sm text-gray-300 mt-2 text-center">
+                    Or browse threat intelligence below
                 </p>
             </div>
+        </div>
+    </header>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label for="severity-filter" class="block text-gray-700 font-medium mb-2">Severity Filter</label>
-                    <select id="severity-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                        <option value="">All Severities</option>
-                        <option value="CRITICAL">Critical</option>
-                        <option value="HIGH">High</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="LOW">Low</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label for="sort-by" class="block text-gray-700 font-medium mb-2">Sort Results</label>
-                    <select id="sort-by" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                        <option value="published_date_desc">Most Recent First</option>
-                        <option value="published_date_asc">Oldest First</option>
-                        <option value="base_score_desc">Highest Base Score</option>
-                        <option value="base_score_asc">Lowest Base Score</option>
-                        <option value="cvss-bt_score_desc">Highest CVSS-BT Score</option>
-                        <option value="cvss-bt_score_asc">Lowest CVSS-BT Score</option>
-                        <option value="cvss-te_score_desc">Highest CVSS-TE Score</option>
-                        <option value="epss_desc">Highest EPSS Score</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4">
-                <button 
-                    id="search-btn" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex-1"
-                >
-                    Search Vulnerabilities
-                </button>
-                <button 
-                    id="export-btn" 
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-6 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 flex-1"
-                >
-                    Export Results
-                </button>
-            </div>
-        </section>
-
-        <!-- Quick Help Section -->
-        <section class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Quick Tips</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 class="font-medium text-gray-800 mb-2">Multiple CVEs</h4>
-                    <p class="text-sm text-gray-600">Enter multiple CVE IDs separated by commas (e.g., CVE-2021-44228, CVE-2023-23397)</p>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 class="font-medium text-gray-800 mb-2">Understanding Scores</h4>
-                    <p class="text-sm text-gray-600">Click "What do these scores mean?" to learn about CVSS Base, CVSS-BT, and CVSS-TE scoring</p>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h4 class="font-medium text-gray-800 mb-2">Export Results</h4>
-                    <p class="text-sm text-gray-600">Download your search results in CSV format for further analysis</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Stats Panel -->
-        <section id="stats-bar" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden border border-gray-100">
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div class="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <p class="text-sm text-gray-500 mb-1">Total Results</p>
-                    <p id="total-results" class="text-2xl font-bold text-gray-800">0</p>
-                </div>
-                <div class="text-center p-3 bg-red-50 rounded-lg border border-red-100">
-                    <p class="text-sm text-gray-500 mb-1">Critical</p>
-                    <p id="critical-count" class="text-2xl font-bold text-red-600">0</p>
-                </div>
-                <div class="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <p class="text-sm text-gray-500 mb-1">High</p>
-                    <p id="high-count" class="text-2xl font-bold text-orange-600">0</p>
-                </div>
-                <div class="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <p class="text-sm text-gray-500 mb-1">High EPSS</p>
-                    <p id="high-epss-count" class="text-2xl font-bold text-orange-600">0</p>
-                </div>
-                <div class="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
-                    <p class="text-sm text-gray-500 mb-1">With Exploits</p>
-                    <p id="exploit-count" class="text-2xl font-bold text-purple-600">0</p>
-                </div>
-            </div>
-        </section>
-
+    <main class="container mx-auto px-4 py-8">
+        
         <!-- Loading Indicator -->
-        <div id="loading" class="text-center hidden py-8">
-            <div class="spinner"></div>
-            <p class="text-gray-600 mt-4">Loading vulnerability data...</p>
+        <div id="dashboard-loading" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p class="text-gray-600 mt-4">Loading threat intelligence...</p>
         </div>
 
-        <!-- Error Message -->
-        <div id="error" class="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8 hidden" role="alert">
-            <span class="block sm:inline font-medium" id="error-message"></span>
-        </div>
-
-        <!-- Results Section -->
-        <!-- Scoring Information Panel -->
-        <section id="scoring-info-panel" class="bg-blue-50 rounded-xl shadow-sm p-6 mb-8 border border-blue-100 hidden">
-            <div class="flex justify-between items-start mb-2">
-                <h3 class="text-lg font-bold text-blue-800">Understanding CVSS Scores</h3>
-                <button id="close-info-panel" class="text-blue-600 hover:text-blue-800">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-lg border border-blue-100">
-                    <h4 class="font-bold text-blue-800 mb-2">CVSS Base Score</h4>
-                    <p class="text-sm text-gray-600">The standard severity rating based on intrinsic characteristics of a vulnerability, without considering real-world threat context.</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg border border-blue-100">
-                    <h4 class="font-bold text-blue-800 mb-2">CVSS-BT Score</h4>
-                    <p class="text-sm text-gray-600">Base score modified with Temporal metrics, incorporating exploit availability and maturity using the standard CVSS specification.</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg border border-blue-100">
-                    <h4 class="font-bold text-blue-800 mb-2">CVSS-TE Score</h4>
-                    <p class="text-sm text-gray-600">Threat-Enhanced score that extends beyond CVSS-BT by incorporating exploit quality and additional threat intelligence factors for better real-world risk assessment.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="results-container" class="hidden">
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center">
-                    <h2 class="text-xl font-bold text-gray-800 mr-3">Search Results</h2>
-                    <button id="show-scoring-info" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-medium py-1 px-2 rounded-full transition-colors">
-                        What do these scores mean?
-                    </button>
-                </div>
-                <span id="results-count" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">Showing 0 results</span>
-            </div>
+        <!-- Dashboard Content (hidden until loaded) -->
+        <div id="dashboard-content" class="hidden">
             
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200" id="results-table">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CVE</th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div class="tooltip">
-                                        CVSS Base
-                                        <span class="tooltiptext">Standard CVSS Base Score - measures intrinsic vulnerability severity without real-world context</span>
-                                    </div>
-                                </th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div class="tooltip">
-                                        CVSS-BT
-                                        <span class="tooltiptext">Base + Temporal Score - adjusts severity based on exploit availability following CVSS standard</span>
-                                    </div>
-                                </th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div class="tooltip">
-                                        CVSS-TE
-                                        <span class="tooltiptext">Threat-Enhanced Score - considers exploit quality, threat intelligence factors, and real-world exploitation for better prioritization</span>
-                                    </div>
-                                </th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <div class="tooltip">
-                                        EPSS
-                                        <span class="tooltiptext">Exploit Prediction Scoring System - likelihood of exploitation</span>
-                                    </div>
-                                </th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Threat Indicators</th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Published</th>
-                                <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody id="results-body" class="bg-white divide-y divide-gray-200">
-                            <!-- Results will be populated here -->
-                        </tbody>
-                    </table>
+            <!-- Statistics Cards -->
+            <section id="statistics" class="mb-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <!-- Total CVEs -->
+                    <div class="bg-white rounded-lg shadow-lg p-4 text-center border-l-4 border-gray-300 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="text-4xl font-bold text-gray-800" id="stat-total">-</div>
+                        <div class="text-sm text-gray-600 mt-1">Total CVEs</div>
+                    </div>
+                    <!-- CISA KEVs (Priority - Special Treatment) -->
+                    <div class="bg-red-50 rounded-lg shadow-lg p-4 text-center border-2 border-red-200 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="text-4xl font-bold text-red-600" id="stat-kev">-</div>
+                        <div class="text-sm text-red-700 font-semibold mt-1">CISA KEVs</div>
+                    </div>
+                    <!-- Critical -->
+                    <div class="bg-orange-50 rounded-lg shadow-lg p-4 text-center border-l-4 border-orange-500 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="text-4xl font-bold text-orange-600" id="stat-critical">-</div>
+                        <div class="text-sm text-gray-600 mt-1">Critical</div>
+                    </div>
+                    <!-- High -->
+                    <div class="bg-yellow-50 rounded-lg shadow-lg p-4 text-center border-l-4 border-yellow-500 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="text-4xl font-bold text-yellow-600" id="stat-high">-</div>
+                        <div class="text-sm text-gray-600 mt-1">High</div>
+                    </div>
+                    <!-- High EPSS -->
+                    <div class="bg-purple-50 rounded-lg shadow-lg p-4 text-center border-l-4 border-purple-500 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="text-4xl font-bold text-purple-600" id="stat-epss">-</div>
+                        <div class="text-sm text-gray-600 mt-1">High EPSS</div>
+                    </div>
+                    <!-- With Exploits -->
+                    <div class="bg-blue-50 rounded-lg shadow-lg p-4 text-center border-l-4 border-blue-500 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
+                        <div class="text-4xl font-bold text-blue-600" id="stat-exploits">-</div>
+                        <div class="text-sm text-gray-600 mt-1">With Exploits</div>
+                    </div>
                 </div>
-            </div>
-        </section>
-        
-        <!-- Modal for CVE details -->
-        <div id="cve-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="bg-white rounded-xl max-w-4xl w-full max-h-screen overflow-y-auto m-4 shadow-2xl">
-                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                    <h3 class="text-xl font-bold text-gray-800" id="modal-title">CVE Details</h3>
-                    <button id="close-modal" class="text-gray-500 hover:text-gray-700 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+            </section>
+
+            <!-- CISA KEVs Section (PRIORITY!) -->
+            <section id="cisa-kevs" class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-500">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <span class="text-red-500 mr-2">🚨</span>
+                            CISA Known Exploited Vulnerabilities
+                        </h2>
+                        <div class="flex items-center gap-3">
+                            <select id="kev-sort" class="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                <option value="date_desc">Most Recent KEVs</option>
+                                <option value="cvss-te_desc">Highest CVSS-TE</option>
+                                <option value="cvss-te_asc">Lowest CVSS-TE</option>
+                                <option value="date_asc">Oldest KEVs</option>
+                                <option value="epss_desc">Highest EPSS</option>
+                            </select>
+                            <a href="/lookup.html" class="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors whitespace-nowrap">
+                                View All →
+                            </a>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-4 text-sm">
+                        Active threats with confirmed exploitation in the wild (CISA mandatory patching). <span class="font-medium">Sorted by date added to CISA KEV catalog.</span>
+                    </p>
+                    
+                    <!-- KEV List -->
+                    <div id="kev-list" class="space-y-3">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
-                <div class="p-6" id="modal-content">
-                    <!-- Modal content will be populated here -->
+            </section>
+
+            <!-- Recent CVEs Section -->
+            <section id="recent-cves" class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            📅 Recently Published Vulnerabilities
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <select id="recent-days-filter" class="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="7">Last 7 days</option>
+                                <option value="14">Last 14 days</option>
+                                <option value="30">Last 30 days</option>
+                            </select>
+                            <select id="recent-sort" class="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="date_desc">Most Recent</option>
+                                <option value="date_asc">Oldest First</option>
+                                <option value="cvss-te_desc">Highest CVSS-TE</option>
+                                <option value="cvss-te_asc">Lowest CVSS-TE</option>
+                                <option value="epss_desc">Highest EPSS</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent CVEs List -->
+                    <div id="recent-list" class="space-y-3">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
-                <div class="p-6 border-t border-gray-200 flex justify-end">
-                    <button id="close-modal-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
-                        Close
-                    </button>
+            </section>
+
+            <!-- Emerging Threats Section -->
+            <section id="emerging-threats" class="mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            🔥 Emerging Threats
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <select id="emerging-days-filter" class="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="30">Last 30 days</option>
+                                <option value="60">Last 60 days</option>
+                                <option value="90" selected>Last 90 days</option>
+                            </select>
+                            <select id="emerging-sort" class="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="cvss-te_desc">Highest CVSS-TE</option>
+                                <option value="cvss-te_asc">Lowest CVSS-TE</option>
+                                <option value="date_desc">Most Recent</option>
+                                <option value="epss_desc">Highest EPSS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mb-4 text-sm">
+                        <span class="font-medium">New vulnerabilities with active exploitation or high risk.</span> Includes CVEs with EPSS ≥ 30%, public exploits, or KEV status.
+                    </p>
+                    
+                    <!-- Emerging Threats List -->
+                    <div id="emerging-list" class="space-y-3">
+                        <!-- Populated by JavaScript -->
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Privacy Notice -->
-        <div class="text-center mt-8 mb-4">
-            <p class="text-xs text-gray-500">This site uses analytics to improve the tool. No personally identifiable information is collected.</p>
+            </section>
+
         </div>
     </main>
 
+    <!-- Footer -->
     <footer class="bg-slate-800 text-white py-8 mt-12">
         <div class="container mx-auto px-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -317,6 +274,6 @@
 
     <!-- External JavaScript Files -->
     <script src="js/config.js"></script>
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>

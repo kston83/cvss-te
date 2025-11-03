@@ -75,6 +75,9 @@ class CVSSApp {
 
         // Display recent searches
         this.displayRecentSearches();
+
+        // Check for CVE in URL parameters
+        this.checkUrlParameters();
     }
 
     /**
@@ -134,10 +137,22 @@ class CVSSApp {
                 const localTime = lastRunDate.toLocaleString('en-US', localOptions);
                 
                 this.elements.lastUpdateTime.textContent = `Last Updated: ${utcTime} / ${localTime}`;
+                
+                // Update nav bar last update time (if element exists)
+                const navUpdateElement = document.getElementById('last-update-nav');
+                if (navUpdateElement) {
+                    navUpdateElement.textContent = `Last Updated: ${utcTime}`;
+                }
             })
             .catch(error => {
                 console.error('Error fetching last run time:', error);
                 this.elements.lastUpdateTime.textContent = 'Last Updated: Unknown';
+                
+                // Update nav bar
+                const navUpdateElement = document.getElementById('last-update-nav');
+                if (navUpdateElement) {
+                    navUpdateElement.textContent = 'Last Updated: Unknown';
+                }
             });
     }
 
@@ -357,6 +372,20 @@ class CVSSApp {
             this.elements.cveInput.value = searchTerm;
             this.handleSearch();
         });
+    }
+
+    /**
+     * Check URL for pre-filled CVE search
+     */
+    checkUrlParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const cveParam = urlParams.get('cve');
+        
+        if (cveParam) {
+            this.elements.cveInput.value = cveParam;
+            // Auto-trigger search
+            this.handleSearch();
+        }
     }
 }
 
