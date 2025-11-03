@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const lastUpdateTime = document.getElementById('last-update-time');
 
     let csvData = null;
-    let currentResults = [];
+    let originalSearchResults = []; // Store unfiltered search results
+    let currentResults = []; // Store currently displayed results (after filter/sort)
 
     // Analytics tracking functions
     function trackSearch(searchTerm, resultsCount) {
@@ -359,8 +360,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.overflow = '';
     }
 
-    function displayCVEResults(results) {
+    function displayCVEResults(results, isOriginalSearch = false) {
         resultsBody.innerHTML = '';
+        
+        // Store original search results if this is a new search
+        if (isOriginalSearch) {
+            originalSearchResults = results;
+        }
+        
         currentResults = results;
         
         // Update results count
@@ -574,7 +581,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Apply current filters and sorting
+        // Store as original search results and apply current filters and sorting
+        originalSearchResults = matchedCVEs;
         const filteredAndSorted = filterAndSortResults(matchedCVEs);
         
         // Track search analytics
@@ -584,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         saveRecentSearch(inputText);
         
         // Display matched CVEs
-        displayCVEResults(filteredAndSorted);
+        displayCVEResults(filteredAndSorted, true);
     });
 
     // Export button event listener
@@ -633,8 +641,9 @@ document.addEventListener('DOMContentLoaded', function() {
     severityFilter.addEventListener('change', function() {
         trackFilterChange('severity', this.value);
         
-        if (currentResults.length > 0) {
-            const filtered = filterAndSortResults(currentResults);
+        // Always filter from original search results, not the currently displayed filtered results
+        if (originalSearchResults.length > 0) {
+            const filtered = filterAndSortResults(originalSearchResults);
             displayCVEResults(filtered);
         }
     });
@@ -642,8 +651,9 @@ document.addEventListener('DOMContentLoaded', function() {
     sortBy.addEventListener('change', function() {
         trackSortChange(this.value);
         
-        if (currentResults.length > 0) {
-            const filtered = filterAndSortResults(currentResults);
+        // Always sort from original search results, not the currently displayed filtered results
+        if (originalSearchResults.length > 0) {
+            const filtered = filterAndSortResults(originalSearchResults);
             displayCVEResults(filtered);
         }
     });
