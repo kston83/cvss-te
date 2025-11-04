@@ -69,7 +69,7 @@ jobs:
         # This prevents committing the large NVD JSON source files
         git add cvss-te.csv || true
         git add data/ || true
-        git add code/.last_run || true
+        git add code/last_run.txt || true
         
         # Check if there are actually changes to commit
         if git diff --cached --quiet; then
