@@ -3,8 +3,9 @@
  * Fetches CISA KEV catalog and enriches CVE data with dateAdded
  */
 
-const KEV_LOCAL_PATH = 'https://raw.githubusercontent.com/kston83/cvss-te/refs/heads/main/data/kev/known_exploited_vulnerabilities.json'; // Local fallback
+const KEV_LOCAL_PATH = './data/kev/known_exploited_vulnerabilities.json'; // Relative path (GitHub Pages)
 const KEV_REMOTE_URL = 'https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json'; // CISA live feed
+const KEV_GITHUB_FALLBACK = 'https://raw.githubusercontent.com/kston83/cvss-te/refs/heads/main/data/kev/known_exploited_vulnerabilities.json'; // GitHub raw fallback
 const KEV_CACHE_KEY = 'cisa_kev_cache';
 const KEV_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -29,7 +30,10 @@ export class KevEnricher {
                 return;
             }
 
-            // Try remote first (most up-to-date), then fall back to local
+            // Try multiple sources in order:
+            // 1. CISA direct (will fail due to CORS but try anyway)
+            // 2. Local relative path (GitHub Pages)
+            // 3. GitHub raw.githubusercontent.com (absolute fallback)
             console.log('Fetching CISA KEV catalog...');
             let response;
             let source = 'remote';
@@ -38,13 +42,20 @@ export class KevEnricher {
                 response = await fetch(KEV_REMOTE_URL);
                 if (!response.ok) throw new Error(`Remote fetch failed: ${response.status}`);
             } catch (remoteError) {
-                console.warn('Remote KEV fetch failed, trying local fallback:', remoteError.message);
+                console.warn('Remote KEV fetch failed (expected due to CORS), trying local path:', remoteError.message);
                 try {
                     response = await fetch(KEV_LOCAL_PATH);
                     if (!response.ok) throw new Error(`Local fetch failed: ${response.status}`);
                     source = 'local';
                 } catch (localError) {
-                    throw new Error(`Both remote and local KEV fetches failed: ${remoteError.message}, ${localError.message}`);
+                    console.warn('Local KEV fetch failed, trying GitHub fallback:', localError.message);
+                    try {
+                        response = await fetch(KEV_GITHUB_FALLBACK);
+                        if (!response.ok) throw new Error(`GitHub fallback failed: ${response.status}`);
+                        source = 'github';
+                    } catch (githubError) {
+                        throw new Error(`All KEV fetches failed: ${remoteError.message}, ${localError.message}, ${githubError.message}`);
+                    }
                 }
             }
 

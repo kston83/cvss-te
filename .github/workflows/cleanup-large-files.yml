@@ -1,0 +1,61 @@
+name: One-Time Cleanup - Remove Large Files
+
+# This workflow should be run ONCE to clean up the accidentally committed NVD files
+# After running, you can delete this workflow file
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository with full history
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Remove large files from git history
+      run: |
+        echo "⚠️  WARNING: This will rewrite git history!"
+        echo "This operation removes the large NVD JSON files that were accidentally committed"
+        echo ""
+        
+        # List files to be removed
+        echo "Files to be removed from history:"
+        git ls-files | grep -E 'nvdcve-2\.0-.*\.json$' || echo "No nvdcve files in current commit"
+        
+        # Check if BFG or git-filter-repo is needed
+        echo ""
+        echo "Checking repository size..."
+        du -sh .git
+        
+        # For now, just remove from current commit
+        # Full history cleanup would require git filter-branch or BFG Repo-Cleaner
+        echo ""
+        echo "Removing files from current state..."
+        git rm -f nvdcve-2.0-*.json || echo "No files to remove"
+        
+        if git diff --cached --quiet; then
+          echo "No files were staged for removal"
+        else
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git commit -m "Remove large NVD source files from repository"
+          git push origin HEAD:main
+        fi
+
+    - name: Report
+      run: |
+        echo ""
+        echo "✅ Cleanup of current state complete!"
+        echo ""
+        echo "⚠️  NOTE: The files are still in git history."
+        echo "To fully remove them and reduce repository size, you would need to:"
+        echo "1. Use BFG Repo-Cleaner or git filter-branch"
+        echo "2. Force push to rewrite history (⚠️ breaks existing clones)"
+        echo ""
+        echo "Since the .gitignore is now updated, future commits won't include these files."
+

@@ -34,6 +34,28 @@ jobs:
         VULNCHECK_API_KEY: ${{ secrets.VULNCHECK_API_KEY }}
       run: python code/process_nvd.py
 
+    - name: Cleanup temporary NVD files
+      run: |
+        echo "🧹 Cleaning up temporary NVD JSON files..."
+        rm -f nvdcve-2.0-*.json
+        rm -f *.json.gz
+        echo "✅ Cleanup complete"
+
+    - name: Check file sizes
+      run: |
+        echo "📊 Checking output file sizes..."
+        if [ -f cvss-te.csv ]; then
+          CSV_SIZE=$(du -h cvss-te.csv | cut -f1)
+          CSV_SIZE_MB=$(du -m cvss-te.csv | cut -f1)
+          echo "cvss-te.csv: $CSV_SIZE (${CSV_SIZE_MB}MB)"
+          
+          if [ $CSV_SIZE_MB -gt 90 ]; then
+            echo "⚠️  WARNING: File is close to GitHub's 100MB limit!"
+          elif [ $CSV_SIZE_MB -gt 50 ]; then
+            echo "⚠️  File exceeds GitHub's 50MB recommendation"
+          fi
+        fi
+
     - name: Commit and push if there are changes
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -43,8 +65,19 @@ jobs:
         
         echo "TAG=$TAG" >> $GITHUB_ENV
 
-        git add .
-        git commit -m "Updated CVSS-TE data $(date +%Y-%m-%d)" -a || exit 0
+        # Only add specific files, not everything
+        # This prevents committing the large NVD JSON source files
+        git add cvss-te.csv || true
+        git add data/ || true
+        git add code/.last_run || true
+        
+        # Check if there are actually changes to commit
+        if git diff --cached --quiet; then
+          echo "No changes to commit"
+          exit 0
+        fi
+        
+        git commit -m "Updated CVSS-TE data $(date +%Y-%m-%d)"
         git push origin HEAD:main
         
         # Create a new tag

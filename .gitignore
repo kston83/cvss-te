@@ -7,3 +7,10 @@ code/__pycache__/
 /code/data/
 test.py
 /docs*
+
+# NVD source files (too large for GitHub, regenerated each run)
+nvdcve-2.0-*.json
+*.json.gz
+
+# Large data files (optional - consider if cvss-te.csv needs versioning)
+# cvss-te.csv
