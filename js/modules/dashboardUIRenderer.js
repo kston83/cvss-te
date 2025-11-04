@@ -148,6 +148,7 @@ export class DashboardUIRenderer {
      */
     renderThreatBadges(cve) {
         const badges = [];
+        if (cve.vulncheck_kev) badges.push('<span class="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">VulnCheck KEV</span>');
         if (cve.exploitdb) badges.push('<span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">ExploitDB</span>');
         if (cve.metasploit) badges.push('<span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Metasploit</span>');
         if (cve.nuclei) badges.push('<span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Nuclei</span>');

@@ -112,7 +112,7 @@ export class DashboardDataManager {
                 const epss = parseFloat(cve.epss);
                 const hasHighEpss = !isNaN(epss) && epss >= 0.3; // 30%+ EPSS
                 const hasExploits = cve.exploitdb || cve.metasploit || cve.nuclei || cve.poc_github;
-                const isKev = cve.cisa_kev === 1 || cve.cisa_kev === true || cve.cisa_kev === '1';
+                const isKev = cve.cisa_kev === 1 || cve.cisa_kev === true || cve.cisa_kev === '1' || cve.vulncheck_kev;
                 
                 return hasHighEpss || hasExploits || isKev;
             })
