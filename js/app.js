@@ -121,6 +121,21 @@ function fmtDateAbs(d) {
 }
 
 /**
+ * Format date as precise timestamp for display (e.g., "Apr 18, 2026 3:42 PM")
+ * @param {string|number} d - Date string or timestamp
+ * @returns {string} Formatted timestamp
+ */
+function fmtTimestamp(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return '—';
+  return dt.toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit'
+  });
+}
+
+/**
  * Format EPSS score as percentage
  * @param {*} e - EPSS value (0-1)
  * @returns {string} Formatted percentage
@@ -802,14 +817,14 @@ async function boot() {
   // Load data
   await load();
 
-  // Update last run time
-  $('#meta-updated').textContent = fmtDate(Date.now());
+  // Update last run time with precise timestamp
+  $('#meta-updated').textContent = fmtTimestamp(Date.now());
   const lastRunPath = CONFIG.LAST_RUN_PATH || 'code/last_run.txt';
   try {
     const r = await fetch(lastRunPath);
     if (r.ok) {
       const t = (await r.text()).trim();
-      if (t) $('#meta-updated').textContent = fmtDate(t);
+      if (t) $('#meta-updated').textContent = fmtTimestamp(t);
     }
   } catch (_) { /* noop */ }
 
