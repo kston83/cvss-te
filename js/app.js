@@ -171,8 +171,10 @@ function vendorFromAssigner(a) {
 // ───────────────── state ─────────────────
 const state = {
   data: [],
+  index: new Map(),
   loaded: false,
   route: 'dashboard',
+  _initialNavDone: false,
   sort: { kev: 'date_desc', emerging: 90, recent: 30 },
   lookup: { q: '', filter: 'all', sort: 'cvss-te_desc', results: [] }
 };
@@ -219,6 +221,12 @@ async function load() {
   // Enrich data with KEV dates
   if (kevEnricher.kevMap.size > 0 && state.data.length > 0) {
     state.data = kevEnricher.enrichCves(state.data);
+  }
+
+  // Build index for O(1) CVE lookups
+  state.index.clear();
+  for (const cve of state.data) {
+    if (cve.cve) state.index.set(cve.cve, cve);
   }
 }
 
@@ -457,7 +465,7 @@ function renderLookup() {
  * @param {string} cve - CVE ID
  */
 function openDetail(cve) {
-  const c = state.data.find(x => x.cve === cve);
+  const c = state.index.get(cve);
   if (!c) return;
 
   // Track CVE view
@@ -638,9 +646,16 @@ function go(route) {
   if (route === 'lookup') renderLookup();
 
   const h = '#/' + route;
-  if (location.hash !== h) history.replaceState(null, '', h);
+  if (location.hash !== h) {
+    if (state._initialNavDone) {
+      history.pushState(null, '', h);
+    } else {
+      history.replaceState(null, '', h);
+      state._initialNavDone = true;
+    }
+  }
   try { localStorage.setItem('cvsste.route', route); } catch (_) { /* noop */ }
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  window.scrollTo({ top: 0, behavior: 'auto' });
 
   // Track navigation
   analytics.trackPageView(route);
@@ -811,8 +826,8 @@ async function boot() {
   });
   $('#meta-updated').textContent = 'loading…';
 
-  // Track page view
-  analytics.trackPageView('initial_load', { referrer: document.referrer || 'direct' });
+  // Track boot performance (separate from page view tracked in go())
+  analytics.track('app_boot', { referrer: document.referrer || 'direct' });
 
   // Load data
   await load();
@@ -841,7 +856,7 @@ async function boot() {
 
   // Handle ?cve= parameter
   if (cveParam) {
-    const exists = state.data.some(c => c.cve === cveParam);
+    const exists = state.index.has(cveParam);
     if (exists) {
       $('#search-input').value = cveParam;
       state.lookup.q = cveParam;

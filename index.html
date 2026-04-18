@@ -39,7 +39,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
 <!-- External Libraries -->
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" integrity="sha384-D/t0ZMqQW31H3az8ktEiNb39wyKnS82iFY52QPACM+IjKW3jDUhyIgh2PApRqJZs" crossorigin="anonymous"></script>
 
 <!-- Design System -->
 <link rel="stylesheet" href="styles.css">
@@ -70,8 +70,9 @@
   </div>
 </header>
 
+<main>
 <!-- ── Dashboard ─────────────────────────── -->
-<main class="page" id="view-dashboard">
+<section class="page" id="view-dashboard">
   <div class="page-head">
     <div>
       <div class="page-eyebrow">Threat landscape</div>
@@ -137,10 +138,10 @@
     </div>
     <div class="panel-body" id="list-recent"></div>
   </section>
-</main>
+</section>
 
 <!-- ── Lookup ─────────────────────────── -->
-<main class="page hidden" id="view-lookup">
+<section class="page hidden" id="view-lookup">
   <div class="page-head">
     <div>
       <div class="page-eyebrow">Lookup</div>
@@ -190,10 +191,10 @@
     </div>
     <div class="panel-body" id="list-lookup"></div>
   </div>
-</main>
+</section>
 
 <!-- ── About / Methodology ─────────────── -->
-<main class="page hidden" id="view-about">
+<section class="page hidden" id="view-about">
   <div class="page-head">
     <div>
       <div class="page-eyebrow">Methodology</div>
@@ -320,6 +321,7 @@
       View on GitHub
     </a>
   </div>
+</section>
 </main>
 
 <!-- Modal root -->
