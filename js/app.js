@@ -449,12 +449,16 @@ function renderLookup() {
     const hay = [c.cve, c.description, c.vendor_project, c.assigner, c.base_vector].filter(Boolean).join(' ').toLowerCase();
     return hay.includes(qlc);
   });
-  const sorted = sortRows(rows, sort).slice(0, 500);
+  const MAX_DISPLAY = 500;
+  const sorted = sortRows(rows, sort).slice(0, MAX_DISPLAY);
 
   // Store for export
   state.lookup.results = sorted;
 
-  $('#result-count').textContent = rows.length.toLocaleString();
+  const countText = rows.length > MAX_DISPLAY
+    ? `Showing ${MAX_DISPLAY.toLocaleString()} of ${rows.length.toLocaleString()}`
+    : rows.length.toLocaleString();
+  $('#result-count').textContent = countText;
   renderList($('#list-lookup'), sorted, q ? `No CVEs match "${q}".` : 'No CVEs match filters.');
 }
 
